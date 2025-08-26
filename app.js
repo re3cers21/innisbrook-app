@@ -114,7 +114,6 @@ function showPlayersSubView(subViewName) {
         teamsContainer.classList.remove('hidden');
         document.getElementById('subtab-teams').classList.add('active');
     }
-}
 
 function updateActiveTab(activeTabId) {
     document.querySelectorAll('.tab-button').forEach(button => {
