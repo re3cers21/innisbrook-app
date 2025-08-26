@@ -1,3 +1,28 @@
+// Render the teams view
+function renderTeams(data) {
+    const createPlayerCard = player => {
+        const captainBadge = player.is_captain ? `<span class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Captain</span>` : '';
+        const draftPick = player.draft_pick ? `<span class="text-sm font-bold text-gray-400 w-6">${player.draft_pick}.</span>` : '<span class="w-6"></span>';
+        return `
+            <div class="card p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    ${draftPick}
+                    <p class="font-semibold text-gray-800 clickable-player" data-player-id="${player.player_id}">${player.name}</p>
+                    ${captainBadge}
+                </div>
+                <p class="text-sm text-gray-600 font-medium">HCP: ${player.handicap_index}</p>
+            </div>`;
+    };
+    const sortByCaptainAndPick = (a, b) => {
+        if (a.is_captain && !b.is_captain) return -1;
+        if (!a.is_captain && b.is_captain) return 1;
+        return (a.draft_pick || 99) - (b.draft_pick || 99);
+    };
+    const teamHomzaHtml = data.filter(p => p.team === 'Homza').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
+    const teamKinnairdHtml = data.filter(p => p.team === 'Kinnaird').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
+    teamHomzaContainer.innerHTML = teamHomzaHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
+    teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
+}
 // Render the players table
 function renderPlayers(data) {
     playersTableBody.innerHTML = '';
