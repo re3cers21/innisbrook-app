@@ -278,12 +278,12 @@ async function renderRoundDetails(roundId) {
     // Scorecard type toggles
     let scorecardTypes = [
         { key: 'gross', label: 'Gross', checked: true },
-        { key: 'net', label: 'Net', checked: false },
-        { key: 'team', label: 'Team Game', checked: false }
+        { key: 'net', label: 'Net', checked: true },
+        { key: 'team', label: 'Team Game', checked: true }
     ];
     if (!window.scorecardTypeState) window.scorecardTypeState = {};
     if (!window.scorecardTypeState[roundId]) {
-        window.scorecardTypeState[roundId] = { gross: true, net: false, team: false };
+        window.scorecardTypeState[roundId] = { gross: true, net: true, team: true };
     }
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
