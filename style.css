@@ -3,7 +3,7 @@ body {
     font-family: 'Inter', sans-serif;
     background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%);
     min-height: 100vh;
-    background-image: url('https://images.golfdigest.com/photos/623b1e2e7e2b6e7b2b2b2b2b/master/w_1600%2Cc_limit/innisbrook-copperhead-16th-hole.jpg');
+    background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
     background-size: cover;
     background-attachment: fixed;
     background-blend-mode: lighten;
@@ -12,7 +12,7 @@ body {
 
 body.dark-mode {
     background: linear-gradient(135deg, #102415 0%, #183c1a 100%);
-    background-image: url('https://images.golfdigest.com/photos/623b1e2e7e2b6e7b2b2b2b2b/master/w_1600%2Cc_limit/innisbrook-copperhead-16th-hole.jpg');
+    background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
     background-size: cover;
     background-attachment: fixed;
     background-blend-mode: multiply;
