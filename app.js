@@ -33,6 +33,7 @@ function showLeaderboardTab(tab) {
     });
     document.getElementById(`leaderboard-tab-${tab}`).classList.add('active');
     document.getElementById(`leaderboard-${tab}`).classList.remove('hidden');
+}
 
 // Add event listeners for leaderboard sub-tabs after DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,6 +52,7 @@ try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (error) {
     showError("Supabase initialization failed.", error.message);
+}
 
 // DOM Elements
 const loader = document.getElementById('loader');
@@ -68,10 +70,11 @@ const playersTableBody = document.getElementById('playersTableBody');
 const teamHomzaContainer = document.getElementById('teamHomzaContainer');
 const teamKinnairdContainer = document.getElementById('teamKinnairdContainer');
 const recentRoundsContainer = document.getElementById('recentRoundsContainer');
-// Removed: handicapGrid and searchInput, as handicaps section is gone
+const handicapGrid = document.getElementById('handicapGrid');
+const searchInput = document.getElementById('searchInput');
 const backButton = document.getElementById('backButton');
 
-// Removed: allHandicapData, as handicaps section is gone
+let allHandicapData = [];
 let allPlayersData = [];
 let lastActiveTab = 'players';
 
@@ -99,6 +102,7 @@ function showView(viewName) {
         profileView.classList.remove('hidden');
         tabNav.classList.add('hidden');
     }
+}
 
 function showPlayersSubView(subViewName) {
     allPlayersContainer.classList.add('hidden');
@@ -114,6 +118,7 @@ function showPlayersSubView(subViewName) {
         teamsContainer.classList.remove('hidden');
         document.getElementById('subtab-teams').classList.add('active');
     }
+}
 
 function updateActiveTab(activeTabId) {
     document.querySelectorAll('.tab-button').forEach(button => {
@@ -124,6 +129,7 @@ function updateActiveTab(activeTabId) {
     if(activeButton) {
         activeButton.classList.add('active', 'text-gray-900');
     }
+}
 
 // --- Data Fetching ---
 async function fetchPlayers() {
@@ -132,8 +138,14 @@ async function fetchPlayers() {
     allPlayersData = data;
     renderPlayers(allPlayersData);
     renderTeams(allPlayersData);
+}
 
-// Removed: fetchHandicaps, as handicaps section is gone
+async function fetchHandicaps() {
+    const { data, error } = await supabase.from('course_handicap_view').select('*');
+    if (error) throw error;
+    allHandicapData = data;
+    renderHandicaps(allHandicapData);
+}
 
 
 function renderRoundSelector(rounds) {
@@ -168,93 +180,32 @@ function renderRoundSelector(rounds) {
     renderRoundDetails(showId);
 }
 
-window.renderRoundDetails = async function renderRoundDetails(roundId) {
+function renderRoundDetails(roundId) {
     // Remove any previous details
     let detailsDiv = document.getElementById('roundDetailsDiv');
     if (detailsDiv) detailsDiv.remove();
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
     if (!roundPlayers.length) return;
+    detailsDiv = document.createElement('div');
+    detailsDiv.id = 'roundDetailsDiv';
+    detailsDiv.className = 'card p-6';
+    // Round header
     const round = roundPlayers[0];
-    // Fetch holes for this course
-    let holes = [];
-    try {
-        const { data: holesData, error: holesError } = await supabase
-            .from('Holes')
-            .select('*')
-            .eq('course_id', round.course_id)
-            .order('hole_number');
-        if (holesError) throw holesError;
-        holes = holesData;
-    } catch (e) {
-        // fallback: show error
-        detailsDiv = document.createElement('div');
-        detailsDiv.id = 'roundDetailsDiv';
-        detailsDiv.className = 'card p-6';
-        detailsDiv.innerHTML = `<div class="text-red-600">Could not load holes for this course.</div>`;
-        recentRoundsContainer.appendChild(detailsDiv);
-        return;
-    }
-    // Fetch all scores for this round
-    let scores = [];
-    try {
-        const { data: scoresData, error: scoresError } = await supabase
-            .from('Scores')
-            .select('*')
-            .eq('round_id', roundId);
-        if (scoresError) throw scoresError;
-        scores = scoresData;
-    } catch (e) {
-        detailsDiv = document.createElement('div');
-        detailsDiv.id = 'roundDetailsDiv';
-        detailsDiv.className = 'card p-6';
-        detailsDiv.innerHTML = `<div class="text-red-600">Could not load scores for this round.</div>`;
-        recentRoundsContainer.appendChild(detailsDiv);
-        return;
-    }
-
-    // Build scoreboard
-    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</h3>`;
-    html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead>`;
-    // First row: Hole label, then hole numbers, Out/In/Total
-    html += `<tr><th class="px-2 py-1 text-left font-bold">Hole</th>`;
-    holes.forEach(hole => {
-        html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-    });
-    html += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th></tr>`;
-    // Second row: Par label, then par values
-    html += `<tr><td class="font-bold text-gray-500">Par</td>`;
-    holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">${hole.hole_par}</td>`;
-    });
-    html += `<td colspan="3"></td></tr>`;
-    // Third row: Hdcp label, then handicap values
-    html += `<tr><td class="font-bold text-gray-500">Hdcp</td>`;
-    holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">${hole.hole_handicap}</td>`;
-    });
-    html += `<td colspan="3"></td></tr>`;
-    html += `</thead><tbody>`;
-    // Get all unique players who have a score for this round
-    const playerIds = Array.from(new Set(scores.map(s => s.player_id)));
-    // Get player names from roundPlayers (fallback to player_id if not found)
-    playerIds.forEach(player_id => {
-        const playerObj = roundPlayers.find(p => p.player_id == player_id);
-        const player_name = playerObj ? playerObj.player_name : player_id;
-        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player_id}">${player_name}</td>`;
-        let out = 0, in9 = 0, total = 0;
-        holes.forEach((hole, idx) => {
-            const scoreObj = scores.find(s => s.player_id == player_id && s.hole_id == hole.hole_id);
-            const score = scoreObj ? scoreObj.gross_strokes : '';
-            html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
-            if (score !== null && score !== undefined && score !== '') {
-                total += Number(score);
-                if (idx < 9) out += Number(score);
-                else in9 += Number(score);
-            }
-        });
-        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-        html += `</tr>`;
+    const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let html = `<h3 class="text-xl font-bold mb-2">${round.course_name} - ${date}</h3>`;
+    html += `<table class="min-w-full divide-y divide-gray-200 mt-4"><thead><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">To Par</th></tr></thead><tbody>`;
+    roundPlayers.forEach(p => {
+        const score = p.total_score || 'N/A';
+        const par = p.total_par || 'N/A';
+        let scoreToParDisplay = '';
+        if (score !== 'N/A' && par !== 'N/A') {
+            const scoreToPar = score - par;
+            if (scoreToPar > 0) scoreToParDisplay = `+${scoreToPar}`;
+            else if (scoreToPar === 0) scoreToParDisplay = 'E';
+            else scoreToParDisplay = `${scoreToPar}`;
+        }
+        html += `<tr><td class="px-4 py-2 font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.player_name}</td><td class="px-4 py-2">${score}</td><td class="px-4 py-2">${scoreToParDisplay}</td></tr>`;
     });
     html += `</tbody></table>`;
     detailsDiv.innerHTML = html;
@@ -326,7 +277,17 @@ function renderTeams(data) {
     teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
 }
 
-// Removed: renderHandicaps, as handicaps section is gone
+function renderHandicaps(data) {
+    const noResults = document.getElementById('noResults');
+    handicapGrid.innerHTML = '';
+    noResults.classList.toggle('hidden', data.length > 0);
+    data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card p-5';
+        card.innerHTML = `<div><div class="flex items-start justify-between"><div><h3 class="text-xl font-bold text-gray-900 clickable-player" data-player-id="${item.player_id}">${item.player_name}</h3><p class="text-sm text-gray-500">${item.course_name}</p></div><div class="text-right"><span class="text-3xl font-bold text-emerald-600">${item.course_handicap}</span><p class="text-xs text-gray-500 font-medium">Handicap</p></div></div><div class="mt-4 border-t border-gray-200 pt-4"><dl><div class="text-sm"><dt class="text-gray-500">Tee</dt><dd class="font-medium text-gray-800">${item.tee_name}</dd></div></dl></div></div>`;
+        handicapGrid.appendChild(card);
+    });
+}
 
 function renderRecentRounds(data) {
     recentRoundsContainer.innerHTML = '';
@@ -388,13 +349,21 @@ function showError(message, details) {
     errorDetails.textContent = `Details: ${details}`;
 }
 
-// Removed: filterHandicaps, as handicaps section is gone
+function filterHandicaps() {
+    const query = searchInput.value.toLowerCase();
+    const filteredData = allHandicapData.filter(item =>
+        item.player_name.toLowerCase().includes(query) ||
+        item.course_name.toLowerCase().includes(query) ||
+        item.tee_name.toLowerCase().includes(query)
+    );
+    renderHandicaps(filteredData);
+}
 
 // --- Main Execution & Event Listeners ---
 async function initializeApp() {
     loader.classList.remove('hidden');
     try {
-        await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+        await Promise.all([fetchPlayers(), fetchRecentRounds(), fetchHandicaps()]);
         loader.classList.add('hidden');
         showView('players');
         showPlayersSubView('all-players');
@@ -409,7 +378,7 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => showV
 document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
 document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
 backButton.addEventListener('click', () => showView(lastActiveTab));
-// Removed: searchInput event listener, as handicaps section is gone
+searchInput.addEventListener('input', filterHandicaps);
 document.getElementById('appContainer').addEventListener('click', (e) => {
     if (e.target.classList.contains('clickable-player')) {
         const playerId = e.target.dataset.playerId;
@@ -417,7 +386,6 @@ document.getElementById('appContainer').addEventListener('click', (e) => {
             showView('profile');
             loadPlayerProfile(playerId);
         }
-
     }
 });
 
