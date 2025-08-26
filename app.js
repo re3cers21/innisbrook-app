@@ -132,7 +132,6 @@ async function fetchPlayers() {
     allPlayersData = data;
     renderPlayers(allPlayersData);
     renderTeams(allPlayersData);
-}
 
 // Removed: fetchHandicaps, as handicaps section is gone
 
