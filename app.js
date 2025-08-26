@@ -336,22 +336,12 @@ async function renderRoundDetails(roundId) {
                 holes.forEach((hole, idx) => {
                     const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
                     const score = scoreObj ? scoreObj.gross_strokes : '';
-                    let cellClass = '', cellContent = score;
+                    grossHtml += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
                     if (score !== null && score !== undefined && score !== '') {
-                        const rel = Number(score) - Number(hole.hole_par);
-                        // Birdie
-                        if (rel === -1) cellClass = 'golf-birdie';
-                        // Eagle or better (use same single circle as birdie)
-                        else if (rel <= -2) cellClass = 'golf-eagle';
-                        // Bogey
-                        else if (rel === 1) cellClass = 'golf-bogey';
-                        // Double bogey or worse (use same single box as bogey)
-                        else if (rel >= 2) cellClass = 'golf-double-bogey';
                         total += Number(score);
                         if (idx < 9) out += Number(score);
                         else in9 += Number(score);
                     }
-                    grossHtml += `<td class="text-center ${cellClass}">${cellContent !== undefined && cellContent !== null ? cellContent : ''}</td>`;
                 });
                 grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
                 grossHtml += `</tr>`;
@@ -381,22 +371,12 @@ async function renderRoundDetails(roundId) {
                 holes.forEach((hole, idx) => {
                     const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
                     const net = scoreObj ? scoreObj.net_strokes : '';
-                    let cellClass = '', cellContent = net;
+                    netHtml += `<td class="text-center">${net !== null && net !== undefined ? net : ''}</td>`;
                     if (net !== null && net !== undefined && net !== '') {
-                        const rel = Number(net) - Number(hole.hole_par);
-                        // Birdie
-                        if (rel === -1) cellClass = 'golf-birdie';
-                        // Eagle or better (use same single circle as birdie)
-                        else if (rel <= -2) cellClass = 'golf-eagle';
-                        // Bogey
-                        else if (rel === 1) cellClass = 'golf-bogey';
-                        // Double bogey or worse (use same single box as bogey)
-                        else if (rel >= 2) cellClass = 'golf-double-bogey';
                         total += Number(net);
                         if (idx < 9) out += Number(net);
                         else in9 += Number(net);
                     }
-                    netHtml += `<td class="text-center ${cellClass}">${cellContent !== undefined && cellContent !== null ? cellContent : ''}</td>`;
                 });
                 netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
                 netHtml += `</tr>`;
