@@ -309,46 +309,6 @@ async function renderRoundDetails(roundId) {
             renderScorecardTables();
         });
     });
-
-    // Render scorecard tables based on toggles
-    function renderScorecardTables() {
-        const container = detailsDiv.querySelector('#scorecardTables');
-        container.innerHTML = '';
-        // GROSS
-        if (window.scorecardTypeState[roundId].gross) {
-            let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
-            grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-            grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-            holes.forEach(hole => {
-                grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-            });
-            grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-            grossHtml += `</tr><tr>`;
-            grossHtml += `<td></td>`;
-            holes.forEach(hole => {
-                grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-            });
-            grossHtml += `<td colspan="3"></td>`;
-            grossHtml += `</tr></thead><tbody>`;
-            allPlayersData.forEach(player => {
-                grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-                let out = 0, in9 = 0, total = 0;
-                holes.forEach((hole, idx) => {
-                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
-                    const score = scoreObj ? scoreObj.gross_strokes : '';
-                    grossHtml += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
-                    if (score !== null && score !== undefined && score !== '') {
-                        total += Number(score);
-                        if (idx < 9) out += Number(score);
-                        else in9 += Number(score);
-                    }
-                });
-                grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-                grossHtml += `</tr>`;
-            });
-            grossHtml += `</tbody></table></div>`;
-            container.innerHTML += grossHtml;
-        }
         // NET
         // Render scorecard tables based on toggles
         function renderScorecardTables() {
