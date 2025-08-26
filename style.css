@@ -1,62 +1,122 @@
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%);
+    min-height: 100vh;
+    background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'); /* golf course bg */
+    background-size: cover;
+    background-attachment: fixed;
+    background-blend-mode: lighten;
+}
+
+.card {
+    background: rgba(255,255,255,0.85);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px 0 rgba(34, 139, 34, 0.15), 0 1.5px 6px 0 rgba(0,0,0,0.08);
+    backdrop-filter: blur(6px);
+    border: 1.5px solid rgba(16,185,129,0.08);
+    animation: fadeInUp 0.7s cubic-bezier(.39,.575,.565,1) both;
+}
+
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(40px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.loader {
+    border: 4px solid #e0f2f1;
+    border-top: 4px solid #43a047;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.clickable-player {
+    cursor: pointer;
+    transition: color 0.2s, text-shadow 0.2s;
+}
+.clickable-player:hover {
+    color: #388e3c;
+    text-shadow: 0 2px 8px #a5d6a7;
+}
+
+.tab-button {
+    transition: all 0.2s cubic-bezier(.39,.575,.565,1);
+    border-radius: 0.75rem 0.75rem 0 0;
+    background: transparent;
+    color: #388e3c;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+}
+.tab-button.active {
+    border-bottom: 3px solid #43a047;
+    color: #fff;
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    font-weight: 700;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.08);
+    z-index: 2;
+}
+.tab-button:not(.active) {
+    border-bottom: 3px solid transparent;
+    color: #388e3c;
+    background: none;
+}
+
+/* Sub-tab Styles */
+.sub-tab-button {
+    transition: all 0.2s cubic-bezier(.39,.575,.565,1);
+    background: #e8f5e9;
+    color: #388e3c;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 1px 4px 0 rgba(67,160,71,0.06);
+}
+.sub-tab-button.active {
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.12);
+}
+
 /* Leaderboard Sub-tab Styles */
 .leaderboard-subtab-button {
-    transition: all 0.2s ease-in-out;
-    background-color: #e5e7eb;
-    color: #4b5563;
+    transition: all 0.2s cubic-bezier(.39,.575,.565,1);
+    background: #e8f5e9;
+    color: #388e3c;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 1px 4px 0 rgba(67,160,71,0.06);
 }
 .leaderboard-subtab-button.active {
-    background-color: #10b981;
-    color: white;
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.12);
 }
 .leaderboard-tab-content {
-    /* Optionally add padding or style for tab content */
+    animation: fadeInUp 0.7s cubic-bezier(.39,.575,.565,1) both;
 }
-body { 
-    font-family: 'Inter', sans-serif; 
-    background-color: #f0f4f8; 
+
+/* Golf icon accent for headings */
+h2::before {
+    content: '\26F3'; /* golf flag icon */
+    margin-right: 0.5em;
+    color: #43a047;
+    font-size: 1.2em;
+    vertical-align: middle;
+    opacity: 0.7;
+    filter: drop-shadow(0 1px 2px #a5d6a7);
 }
-.card { 
-    background-color: white; 
-    border-radius: 0.75rem; 
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); 
-}
-.loader { 
-    border: 4px solid #f3f3f3; 
-    border-top: 4px solid #10b981; 
-    border-radius: 50%; 
-    width: 40px; 
-    height: 40px; 
-    animation: spin 1s linear infinite; 
-}
-@keyframes spin { 
-    0% { transform: rotate(0deg); } 
-    100% { transform: rotate(360deg); } 
-}
-.clickable-player { 
-    cursor: pointer; 
-    transition: color 0.2s; 
-}
-.clickable-player:hover { 
-    color: #059669; 
-}
-.tab-button { 
-    transition: all 0.2s ease-in-out; 
-}
-.tab-button.active { 
-    border-bottom-color: #10b981; 
-    color: #059669; 
-    font-weight: 600; 
-}
-.tab-button:not(.active) { 
-    border-bottom-color: transparent; 
-}
-/* Sub-tab Styles */
-.sub-tab-button { 
-    transition: all 0.2s ease-in-out; 
-    background-color: #e5e7eb; 
-    color: #4b5563; 
-}
-.sub-tab-button.active { 
-    background-color: #10b981; 
-    color: white; 
+
+/* Animations for cards and sections */
+.fade-in {
+    animation: fadeInUp 0.7s cubic-bezier(.39,.575,.565,1) both;
 }
