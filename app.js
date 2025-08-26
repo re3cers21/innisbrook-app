@@ -417,6 +417,7 @@ document.getElementById('appContainer').addEventListener('click', (e) => {
             showView('profile');
             loadPlayerProfile(playerId);
         }
+
     }
 });
 
