@@ -33,7 +33,6 @@ function showLeaderboardTab(tab) {
     });
     document.getElementById(`leaderboard-tab-${tab}`).classList.add('active');
     document.getElementById(`leaderboard-${tab}`).classList.remove('hidden');
-}
 
 // Add event listeners for leaderboard sub-tabs after DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -52,7 +51,6 @@ try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (error) {
     showError("Supabase initialization failed.", error.message);
-}
 
 // DOM Elements
 const loader = document.getElementById('loader');
@@ -361,16 +359,8 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += teamHtml;
             }
         }
-        // Initial render
-        renderScorecardTables();
-            }
-        });
-        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-        html += `</tr>`;
-    });
-    html += `</tbody></table>`;
-    detailsDiv.innerHTML = html;
-    recentRoundsContainer.appendChild(detailsDiv);
+    // Initial render
+    renderScorecardTables();
 }
 
 async function fetchRecentRounds() {
