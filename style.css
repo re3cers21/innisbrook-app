@@ -3,10 +3,51 @@ body {
     font-family: 'Inter', sans-serif;
     background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%);
     min-height: 100vh;
-    background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'); /* golf course bg */
+    background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'); /* fallback */
     background-size: cover;
     background-attachment: fixed;
     background-blend-mode: lighten;
+    transition: background 0.4s;
+}
+
+body.dark-mode {
+    background: linear-gradient(135deg, #232d22 0%, #1a1f1a 100%);
+    background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'); /* fallback */
+    /* Innisbrook Copperhead: https://www.golfdigest.com/content/dam/images/golfdigest/fullset/2022/03/innisbrook-copperhead-16th-hole.jpg */
+    background-image: url('https://images.golfdigest.com/photos/623b1e2e7e2b6e7b2b2b2b2b/master/w_1600%2Cc_limit/innisbrook-copperhead-16th-hole.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    background-blend-mode: darken;
+}
+
+.dark-mode .card {
+    background: rgba(34, 40, 34, 0.92);
+    color: #e8f5e9;
+    border: 1.5px solid rgba(67,160,71,0.18);
+    box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.18);
+}
+.dark-mode h1, .dark-mode h2, .dark-mode h3, .dark-mode h4, .dark-mode h5, .dark-mode h6 {
+    color: #b9f6ca;
+}
+.dark-mode .tab-button,
+.dark-mode .sub-tab-button,
+.dark-mode .leaderboard-subtab-button {
+    color: #b9f6ca;
+    background: #263626;
+}
+.dark-mode .tab-button.active,
+.dark-mode .sub-tab-button.active,
+.dark-mode .leaderboard-subtab-button.active {
+    background: linear-gradient(90deg, #388e3c 60%, #43a047 100%);
+    color: #fff;
+}
+.dark-mode .clickable-player:hover {
+    color: #b9f6ca;
+    text-shadow: 0 2px 8px #43a047;
+}
+.dark-mode .loader {
+    border: 4px solid #263626;
+    border-top: 4px solid #43a047;
 }
 
 .card {

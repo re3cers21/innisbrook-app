@@ -1,3 +1,26 @@
+// --- Dark Mode Toggle ---
+document.addEventListener('DOMContentLoaded', () => {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const darkModeIcon = document.getElementById('darkModeIcon');
+    const sunIconPath = "M12 4V2m0 20v-2m8-8h2M2 12H4m15.364-7.364l1.414 1.414M4.222 19.778l1.414-1.414M19.778 19.778l-1.414-1.414M4.222 4.222l1.414 1.414";
+    const moonIconPath = "M21 12.79A9 9 0 1111.21 3a7 7 0 0010.59 9.79z";
+    function setDarkMode(on) {
+        document.body.classList.toggle('dark-mode', on);
+        if (darkModeIcon) {
+            darkModeIcon.innerHTML = on
+                ? `<path d="${moonIconPath}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
+                : `<path d="${sunIconPath}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+    }
+    // Persist mode in localStorage
+    const darkPref = localStorage.getItem('innisbrook-dark-mode');
+    if (darkPref === 'true') setDarkMode(true);
+    darkModeToggle.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        setDarkMode(isDark);
+        localStorage.setItem('innisbrook-dark-mode', isDark);
+    });
+});
 // --- Leaderboard Sub-tab Navigation ---
 function showLeaderboardTab(tab) {
     const tabs = ['team', 'net', 'gross'];
