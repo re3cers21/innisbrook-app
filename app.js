@@ -223,37 +223,60 @@ async function renderRoundDetails(roundId) {
     detailsDiv.id = 'roundDetailsDiv';
     detailsDiv.className = 'card p-2 overflow-x-auto';
     const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
-    html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-    html += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-    holes.forEach(hole => {
-        html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-    });
-    html += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-    html += `</tr><tr>`;
-    html += `<td></td>`;
-    holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-    });
-    html += `<td colspan="3"></td>`;
-    html += `</tr></thead><tbody>`;
-    // Show all players, even if they have no scores for this round
+    let html = `<h3 class=\"text-xl font-bold mb-4\">${round.course_name} - ${date}</h3>`;
+    html += `<table class=\"min-w-full text-xs md:text-sm scoreboard-table\"><thead><tr>`;
+    html += `<th class=\"px-2 py-1 text-left font-bold\">Hole</th>`;
+    html += `<th class=\"px-2 py-1 text-center font-bold\">Par</th>`;
+    html += `<th class=\"px-2 py-1 text-center font-bold\">Hdcp</th>`;
     allPlayersData.forEach(player => {
-        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-        let out = 0, in9 = 0, total = 0;
-        holes.forEach((hole, idx) => {
+        html += `<th class=\"px-2 py-1 text-center font-bold\"><span class=\"clickable-player\" data-player-id=\"${player.player_id}\">${player.name}</span></th>`;
+    });
+    html += `</tr></thead><tbody>`;
+    // One row per hole
+    holes.forEach((hole, idx) => {
+        html += `<tr>`;
+        html += `<td class=\"text-left font-bold\">${hole.hole_number}</td>`;
+        html += `<td class=\"text-center text-gray-700\">${hole.hole_par}</td>`;
+        html += `<td class=\"text-center text-gray-500\">${hole.hole_handicap}</td>`;
+        allPlayersData.forEach(player => {
             const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
             const score = scoreObj ? scoreObj.gross_strokes : '';
-            html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
-            if (score !== null && score !== undefined && score !== '') {
-                total += Number(score);
-                if (idx < 9) out += Number(score);
-                else in9 += Number(score);
-            }
+            html += `<td class=\"text-center\">${score !== null && score !== undefined ? score : ''}</td>`;
         });
-        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
         html += `</tr>`;
     });
+    // Out, In, Total rows
+    const nHoles = holes.length;
+    function sumScores(player, from, to) {
+        let sum = 0, hasScore = false;
+        for (let i = from; i < to; i++) {
+            const hole = holes[i];
+            const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+            if (scoreObj && scoreObj.gross_strokes !== null && scoreObj.gross_strokes !== undefined && scoreObj.gross_strokes !== '') {
+                sum += Number(scoreObj.gross_strokes);
+                hasScore = true;
+            }
+        }
+        return hasScore ? sum : '';
+    }
+    // Out row
+    html += `<tr><td class=\"font-bold\">Out</td><td></td><td></td>`;
+    allPlayersData.forEach(player => {
+        html += `<td class=\"text-center font-bold\">${sumScores(player, 0, 9)}</td>`;
+    });
+    html += `</tr>`;
+    // In row
+    html += `<tr><td class=\"font-bold\">In</td><td></td><td></td>`;
+    allPlayersData.forEach(player => {
+        html += `<td class=\"text-center font-bold\">${sumScores(player, 9, nHoles)}</td>`;
+    });
+    html += `</tr>`;
+    // Total row
+    html += `<tr><td class=\"font-bold\">Total</td><td></td><td></td>`;
+    allPlayersData.forEach(player => {
+        html += `<td class=\"text-center font-bold\">${sumScores(player, 0, nHoles)}</td>`;
+    });
+    html += `</tr>`;
     html += `</tbody></table>`;
     detailsDiv.innerHTML = html;
     recentRoundsContainer.appendChild(detailsDiv);
