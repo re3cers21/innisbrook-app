@@ -29,6 +29,7 @@
             <nav id="tab-nav" class="-mb-px flex space-x-8" aria-label="Tabs">
                 <button id="tab-players" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Players</button>
                 <button id="tab-dashboard" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700">Handicaps & Rounds</button>
+                <button id="tab-leaderboard" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700">Leaderboard</button>
             </nav>
         </div>
     </header>
@@ -75,6 +76,16 @@
         <div id="dashboardView" class="hidden space-y-12">
             <section id="recentRoundsSection"><h2 class="text-2xl font-bold text-gray-800 mb-4">Recent Rounds</h2><div id="recentRoundsContainer" class="space-y-4"></div></section>
             <section id="handicapsSection"><h2 class="text-2xl font-bold text-gray-800 mb-4">Player Course Handicaps</h2><div class="mb-6"><div class="relative"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg></div><input id="searchInput" type="text" placeholder="Search by player, course, or tee..." class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm shadow-sm"></div></div><div id="handicapGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div><div id="noResults" class="hidden text-center p-8"><div class="card p-6 max-w-md mx-auto"><h3 class="text-xl font-semibold text-gray-700">No Results Found</h3><p class="mt-2 text-gray-600">Your search did not match any players, courses, or tees.</p></div></div></section>
+        </div>
+
+        <!-- Leaderboard Tab Content -->
+        <div id="leaderboardView" class="hidden">
+            <div class="card p-8 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Leaderboard</h2>
+                <div id="leaderboard-container">
+                    <p>Coming soon: Leaderboard standings will be displayed here.</p>
+                </div>
+            </div>
         </div>
 
         <!-- Player Profile View -->

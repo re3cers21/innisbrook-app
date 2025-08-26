@@ -15,6 +15,7 @@ const tabNav = document.getElementById('tab-nav');
 
 const playersView = document.getElementById('playersView');
 const dashboardView = document.getElementById('dashboardView');
+const leaderboardView = document.getElementById('leaderboardView');
 const profileView = document.getElementById('profileView');
 
 const allPlayersContainer = document.getElementById('allPlayersContainer');
@@ -35,6 +36,7 @@ let lastActiveTab = 'players';
 function showView(viewName) {
     playersView.classList.add('hidden');
     dashboardView.classList.add('hidden');
+    leaderboardView.classList.add('hidden');
     profileView.classList.add('hidden');
     tabNav.classList.remove('hidden');
 
@@ -46,6 +48,10 @@ function showView(viewName) {
         dashboardView.classList.remove('hidden');
         updateActiveTab('tab-dashboard');
         lastActiveTab = 'dashboard';
+    } else if (viewName === 'leaderboard') {
+        leaderboardView.classList.remove('hidden');
+        updateActiveTab('tab-leaderboard');
+        lastActiveTab = 'leaderboard';
     } else if (viewName === 'profile') {
         profileView.classList.remove('hidden');
         tabNav.classList.add('hidden');
@@ -255,6 +261,7 @@ async function initializeApp() {
 
 document.getElementById('tab-players').addEventListener('click', () => showView('players'));
 document.getElementById('tab-dashboard').addEventListener('click', () => showView('dashboard'));
+document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
 document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
 document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
 backButton.addEventListener('click', () => showView(lastActiveTab));
