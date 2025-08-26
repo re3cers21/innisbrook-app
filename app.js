@@ -314,7 +314,8 @@ async function renderRoundDetails(roundId) {
     function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
-        // GROSS
+            // GROSS
+            // Determine score indicator and number color class
         if (window.scorecardTypeState[roundId].gross) {
             let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
             grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
@@ -342,7 +343,10 @@ async function renderRoundDetails(roundId) {
                         // Birdie
                         if (rel === -1) cellClass = 'golf-birdie';
                         // Eagle or better
-                        else if (rel <= -2) cellClass = 'golf-eagle';
+                            else if (rel <= -2) {
+                                cellClass = 'golf-eagle';
+                                numberClass = 'golf-eagle-number';
+                            }
                         // Bogey
                         else if (rel === 1) cellClass = 'golf-bogey';
                         // Double bogey or worse
