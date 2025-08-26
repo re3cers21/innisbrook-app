@@ -99,7 +99,6 @@ function showView(viewName) {
         profileView.classList.remove('hidden');
         tabNav.classList.add('hidden');
     }
-}
 
 function showPlayersSubView(subViewName) {
     allPlayersContainer.classList.add('hidden');
