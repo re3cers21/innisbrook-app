@@ -178,13 +178,7 @@ function updateActiveTab(activeTabId) {
 }
 
 // --- Data Fetching ---
-async function fetchPlayers() {
-    const { data, error } = await supabase.from('Players').select('*').order('name');
-    if (error) throw error;
-    allPlayersData = data;
-    renderPlayers(allPlayersData);
-    renderTeams(allPlayersData);
-}
+// ...existing code...
 
 // Removed: fetchHandicaps, as handicaps section is gone
 
