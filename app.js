@@ -174,32 +174,87 @@ function renderRoundSelector(rounds) {
     renderRoundDetails(showId);
 }
 
-function renderRoundDetails(roundId) {
+async function renderRoundDetails(roundId) {
     // Remove any previous details
     let detailsDiv = document.getElementById('roundDetailsDiv');
     if (detailsDiv) detailsDiv.remove();
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
     if (!roundPlayers.length) return;
+    const round = roundPlayers[0];
+    // Fetch holes for this course
+    let holes = [];
+    try {
+        const { data: holesData, error: holesError } = await supabase
+            .from('Holes')
+            .select('*')
+            .eq('course_id', round.course_id)
+            .order('hole_number');
+        if (holesError) throw holesError;
+        holes = holesData;
+    } catch (e) {
+        // fallback: show error
+        detailsDiv = document.createElement('div');
+        detailsDiv.id = 'roundDetailsDiv';
+        detailsDiv.className = 'card p-6';
+        detailsDiv.innerHTML = `<div class="text-red-600">Could not load holes for this course.</div>`;
+        recentRoundsContainer.appendChild(detailsDiv);
+        return;
+    }
+    // Fetch all scores for this round
+    let scores = [];
+    try {
+        const { data: scoresData, error: scoresError } = await supabase
+            .from('Scores')
+            .select('*')
+            .eq('round_id', roundId);
+        if (scoresError) throw scoresError;
+        scores = scoresData;
+    } catch (e) {
+        detailsDiv = document.createElement('div');
+        detailsDiv.id = 'roundDetailsDiv';
+        detailsDiv.className = 'card p-6';
+        detailsDiv.innerHTML = `<div class="text-red-600">Could not load scores for this round.</div>`;
+        recentRoundsContainer.appendChild(detailsDiv);
+        return;
+    }
+    // Build scoreboard
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
-    detailsDiv.className = 'card p-6';
-    // Round header
-    const round = roundPlayers[0];
+    detailsDiv.className = 'card p-2 overflow-x-auto';
     const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    let html = `<h3 class="text-xl font-bold mb-2">${round.course_name} - ${date}</h3>`;
-    html += `<table class="min-w-full divide-y divide-gray-200 mt-4"><thead><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">To Par</th></tr></thead><tbody>`;
-    roundPlayers.forEach(p => {
-        const score = p.total_score || 'N/A';
-        const par = p.total_par || 'N/A';
-        let scoreToParDisplay = '';
-        if (score !== 'N/A' && par !== 'N/A') {
-            const scoreToPar = score - par;
-            if (scoreToPar > 0) scoreToParDisplay = `+${scoreToPar}`;
-            else if (scoreToPar === 0) scoreToParDisplay = 'E';
-            else scoreToParDisplay = `${scoreToPar}`;
-        }
-        html += `<tr><td class="px-4 py-2 font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.player_name}</td><td class="px-4 py-2">${score}</td><td class="px-4 py-2">${scoreToParDisplay}</td></tr>`;
+    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
+    html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+    html += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+    holes.forEach(hole => {
+        html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+    });
+    html += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+    html += `</tr><tr>`;
+    html += `<td></td>`;
+    holes.forEach(hole => {
+        html += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+    });
+    html += `<td colspan="3"></td>`;
+    html += `</tr></thead><tbody>`;
+    // Get unique players for this round
+    const playerMap = {};
+    roundPlayers.forEach(p => { playerMap[p.player_id] = p.player_name; });
+    Object.entries(playerMap).forEach(([player_id, player_name]) => {
+        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player_id}">${player_name}</td>`;
+        let out = 0, in9 = 0, total = 0;
+        holes.forEach((hole, idx) => {
+            const scoreObj = scores.find(s => s.player_id == player_id && s.hole_id == hole.hole_id);
+            const score = scoreObj ? scoreObj.gross_strokes : '';
+            html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
+            if (score !== null && score !== undefined && score !== '') {
+                total += Number(score);
+                if (idx < 9) out += Number(score);
+                else in9 += Number(score);
+            }
+        });
+        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+        html += `</tr>`;
     });
     html += `</tbody></table>`;
     detailsDiv.innerHTML = html;
