@@ -1,7 +1,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%);
+    background: linear-gradient(135deg, #f7faf7 0%, #f3f5f0 100%); /* softer off-white gradient */
     min-height: 100vh;
     background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
     background-size: cover;
@@ -105,7 +105,7 @@ body.dark-mode {
 }
 
 .card {
-    background: rgba(255,255,255,0.85);
+    background: rgba(247, 250, 247, 0.92); /* off-white card background */
     border-radius: 1.25rem;
     box-shadow: 0 8px 32px 0 rgba(34, 139, 34, 0.15), 0 1.5px 6px 0 rgba(0,0,0,0.08);
     backdrop-filter: blur(6px);
