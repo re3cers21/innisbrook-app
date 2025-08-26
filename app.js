@@ -166,16 +166,14 @@ function renderRoundSelector(rounds) {
         btn.onclick = () => {
             selectedRoundId = round.round_id;
             renderRoundSelector(rounds);
+            // Only call renderRoundDetails here, not in renderRoundSelector
             renderRoundDetails(round.round_id);
         };
         selectorDiv.appendChild(btn);
     });
     recentRoundsContainer.appendChild(selectorDiv);
-    // Only show a scorecard if a round is selected
+    // Only show a scorecard if a round is selected, and only from the tab click handler
     document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
-    if (selectedRoundId) {
-        renderRoundDetails(selectedRoundId);
-    }
 }
 
 async function renderRoundDetails(roundId) {
