@@ -3,7 +3,7 @@ body {
     font-family: 'Inter', sans-serif;
     background: linear-gradient(135deg, #e8f5e9 0%, #f0f4f8 100%);
     min-height: 100vh;
-    background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'); /* fallback */
+    background-image: url('https://images.golfdigest.com/photos/623b1e2e7e2b6e7b2b2b2b2b/master/w_1600%2Cc_limit/innisbrook-copperhead-16th-hole.jpg');
     background-size: cover;
     background-attachment: fixed;
     background-blend-mode: lighten;
