@@ -1,4 +1,4 @@
-// Render the teams view
+// --- Function Declarations ---
 function renderTeams(data) {
     const createPlayerCard = player => {
         const captainBadge = player.is_captain ? `<span class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Captain</span>` : '';
@@ -23,7 +23,7 @@ function renderTeams(data) {
     teamHomzaContainer.innerHTML = teamHomzaHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
     teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
 }
-// Render the players table
+
 function renderPlayers(data) {
     playersTableBody.innerHTML = '';
     data.forEach(p => {
@@ -32,7 +32,7 @@ function renderPlayers(data) {
         r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
     });
 }
-// Fetch all recent rounds for the round selector
+
 async function fetchRecentRounds() {
     try {
         const { data, error } = await supabase.from('recent_rounds_view').select('*');
@@ -43,6 +43,7 @@ async function fetchRecentRounds() {
         showError('Failed to fetch recent rounds.', e.message);
     }
 }
+// ...existing code...
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
 let allRecentRounds = [];
 let selectedRoundId = null;
