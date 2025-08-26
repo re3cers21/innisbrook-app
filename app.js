@@ -173,9 +173,8 @@ function renderRoundSelector(rounds) {
     recentRoundsContainer.appendChild(selectorDiv);
     // Show details for selected round or first round
     const showId = selectedRoundId || mergedRounds[0].round_id;
-    // Remove any previous scorecard before rendering a new one
-    let detailsDiv = document.getElementById('roundDetailsDiv');
-    if (detailsDiv) detailsDiv.remove();
+    // Remove all previous scorecards before rendering a new one
+    document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
     renderRoundDetails(showId);
 }
 
