@@ -147,6 +147,71 @@ async function fetchHandicaps() {
     renderHandicaps(allHandicapData);
 }
 
+
+function renderRoundSelector(rounds) {
+    recentRoundsContainer.innerHTML = '';
+    if (!rounds || rounds.length === 0) {
+        recentRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No rounds found.</div>`;
+        return;
+    }
+    // Get unique rounds by round_id and round_date
+    const uniqueRounds = Array.from(
+        new Map(rounds.map(r => [r.round_id, r])).values()
+    );
+    // Sort by date descending
+    uniqueRounds.sort((a, b) => new Date(b.round_date) - new Date(a.round_date));
+    // Render round selector buttons
+    const selectorDiv = document.createElement('div');
+    selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
+    uniqueRounds.forEach(round => {
+        const btn = document.createElement('button');
+        btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
+        btn.textContent = `${round.course_name} (${new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })})`;
+        btn.onclick = () => {
+            selectedRoundId = round.round_id;
+            renderRoundSelector(rounds);
+            renderRoundDetails(round.round_id);
+        };
+        selectorDiv.appendChild(btn);
+    });
+    recentRoundsContainer.appendChild(selectorDiv);
+    // Show details for selected round or first round
+    const showId = selectedRoundId || (uniqueRounds[0] && uniqueRounds[0].round_id);
+    renderRoundDetails(showId);
+}
+
+function renderRoundDetails(roundId) {
+    // Remove any previous details
+    let detailsDiv = document.getElementById('roundDetailsDiv');
+    if (detailsDiv) detailsDiv.remove();
+    // Get all player results for this round
+    const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
+    if (!roundPlayers.length) return;
+    detailsDiv = document.createElement('div');
+    detailsDiv.id = 'roundDetailsDiv';
+    detailsDiv.className = 'card p-6';
+    // Round header
+    const round = roundPlayers[0];
+    const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let html = `<h3 class="text-xl font-bold mb-2">${round.course_name} - ${date}</h3>`;
+    html += `<table class="min-w-full divide-y divide-gray-200 mt-4"><thead><tr><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Player</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Score</th><th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">To Par</th></tr></thead><tbody>`;
+    roundPlayers.forEach(p => {
+        const score = p.total_score || 'N/A';
+        const par = p.total_par || 'N/A';
+        let scoreToParDisplay = '';
+        if (score !== 'N/A' && par !== 'N/A') {
+            const scoreToPar = score - par;
+            if (scoreToPar > 0) scoreToParDisplay = `+${scoreToPar}`;
+            else if (scoreToPar === 0) scoreToParDisplay = 'E';
+            else scoreToParDisplay = `${scoreToPar}`;
+        }
+        html += `<tr><td class="px-4 py-2 font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.player_name}</td><td class="px-4 py-2">${score}</td><td class="px-4 py-2">${scoreToParDisplay}</td></tr>`;
+    });
+    html += `</tbody></table>`;
+    detailsDiv.innerHTML = html;
+    recentRoundsContainer.appendChild(detailsDiv);
+}
+
 async function fetchRecentRounds() {
     const { data, error } = await supabase.from('recent_rounds_view').select('*');
     if (error) throw error;
