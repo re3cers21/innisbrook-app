@@ -28,7 +28,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-gray-200">
             <nav id="tab-nav" class="-mb-px flex space-x-8" aria-label="Tabs">
                 <button id="tab-players" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Players</button>
-                <button id="tab-dashboard" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700">Handicaps & Rounds</button>
+                <button id="tab-dashboard" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700">Rounds</button>
                 <button id="tab-leaderboard" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700">Leaderboard</button>
             </nav>
         </div>
@@ -80,10 +80,21 @@
 
         <!-- Leaderboard Tab Content -->
         <div id="leaderboardView" class="hidden">
-            <div class="card p-8 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Leaderboard</h2>
-                <div id="leaderboard-container">
-                    <p>Coming soon: Leaderboard standings will be displayed here.</p>
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Leaderboard</h2>
+                <div class="mb-6 flex justify-center space-x-2">
+                    <button id="leaderboard-tab-team" class="leaderboard-subtab-button active px-4 py-2 rounded-md font-semibold">Team</button>
+                    <button id="leaderboard-tab-net" class="leaderboard-subtab-button px-4 py-2 rounded-md font-semibold">Net</button>
+                    <button id="leaderboard-tab-gross" class="leaderboard-subtab-button px-4 py-2 rounded-md font-semibold">Gross</button>
+                </div>
+                <div id="leaderboard-team" class="leaderboard-tab-content">
+                    <p>Coming soon: Team leaderboard standings will be displayed here.</p>
+                </div>
+                <div id="leaderboard-net" class="leaderboard-tab-content hidden">
+                    <p>Coming soon: Net leaderboard standings will be displayed here.</p>
+                </div>
+                <div id="leaderboard-gross" class="leaderboard-tab-content hidden">
+                    <p>Coming soon: Gross leaderboard standings will be displayed here.</p>
                 </div>
             </div>
         </div>

@@ -1,3 +1,23 @@
+// --- Leaderboard Sub-tab Navigation ---
+function showLeaderboardTab(tab) {
+    const tabs = ['team', 'net', 'gross'];
+    tabs.forEach(t => {
+        document.getElementById(`leaderboard-tab-${t}`).classList.remove('active');
+        document.getElementById(`leaderboard-${t}`).classList.add('hidden');
+    });
+    document.getElementById(`leaderboard-tab-${tab}`).classList.add('active');
+    document.getElementById(`leaderboard-${tab}`).classList.remove('hidden');
+}
+
+// Add event listeners for leaderboard sub-tabs after DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    ['team', 'net', 'gross'].forEach(tab => {
+        const btn = document.getElementById(`leaderboard-tab-${tab}`);
+        if (btn) {
+            btn.addEventListener('click', () => showLeaderboardTab(tab));
+        }
+    });
+});
 const SUPABASE_URL = 'https://pytfoklmefbeqdblvxcx.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5dGZva2xtZWZiZXFkYmx2eGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNDM4MzgsImV4cCI6MjA3MDcxOTgzOH0.fZ65egcOvVgbF0Jp_-B_VNn4qW905cpq62oU0lIL0bA';
 

@@ -1,3 +1,16 @@
+/* Leaderboard Sub-tab Styles */
+.leaderboard-subtab-button {
+    transition: all 0.2s ease-in-out;
+    background-color: #e5e7eb;
+    color: #4b5563;
+}
+.leaderboard-subtab-button.active {
+    background-color: #10b981;
+    color: white;
+}
+.leaderboard-tab-content {
+    /* Optionally add padding or style for tab content */
+}
 body { 
     font-family: 'Inter', sans-serif; 
     background-color: #f0f4f8; 
