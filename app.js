@@ -1,3 +1,6 @@
+// let recentRoundsContainer = document.getElementById('recentRoundsContainer');
+let allRecentRounds = [];
+let selectedRoundId = null;
 // --- Dark Mode Toggle ---
 document.addEventListener('DOMContentLoaded', () => {
     const darkModeToggle = document.getElementById('darkModeToggle');
@@ -147,7 +150,8 @@ async function fetchHandicaps() {
 async function fetchRecentRounds() {
     const { data, error } = await supabase.from('recent_rounds_view').select('*');
     if (error) throw error;
-    renderRecentRounds(data);
+    allRecentRounds = data;
+    renderRoundSelector(data);
 }
 
 async function loadPlayerProfile(playerId) {
@@ -185,6 +189,7 @@ function renderTeams(data) {
 
         return `
             <div class="card p-4 flex items-center justify-between">
+
                 <div class="flex items-center">
                     ${draftPick}
                     <p class="font-semibold text-gray-800 clickable-player" data-player-id="${player.player_id}">${player.name}</p>
