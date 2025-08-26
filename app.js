@@ -217,11 +217,11 @@ async function renderRoundDetails(roundId) {
             hole_id: i + 1
         }));
     }
-    // Fetch all scores for this round
+    // Fetch all scores for this round from detailed_scores view
     let scores = [];
     try {
         const { data: scoresData, error: scoresError } = await supabase
-            .from('Scores')
+            .from('detailed_scores')
             .select('*')
             .eq('round_id', roundId);
         if (scoresError) throw scoresError;
@@ -304,97 +304,89 @@ async function renderRoundDetails(roundId) {
             container.innerHTML += grossHtml;
         }
         // NET
-        if (window.scorecardTypeState[roundId].net) {
-            let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
-            netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-            netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-            holes.forEach(hole => {
-                netHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-            });
-            netHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-            netHtml += `</tr><tr>`;
-            netHtml += `<td></td>`;
-            holes.forEach(hole => {
-                netHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-            });
-            netHtml += `<td colspan="3"></td>`;
-            netHtml += `</tr></thead><tbody>`;
-            allPlayersData.forEach(player => {
-                netHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-                let out = 0, in9 = 0, total = 0;
-                // Calculate net per hole
-                const playerHandicap = Number(player.handicap_index) || 0;
-                let strokesPerHole = Array(holes.length).fill(0);
-                for (let i = 0; i < Math.floor(playerHandicap); i++) {
-                    let idx = holes.findIndex(h => h.hole_handicap === ((i % holes.length) + 1));
-                    if (idx !== -1) strokesPerHole[idx] += 1;
-                }
-                holes.forEach((hole, idx) => {
-                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
-                    const gross = scoreObj ? scoreObj.gross_strokes : undefined;
-                    let net = gross !== undefined && gross !== null && gross !== '' ? (Number(gross) - strokesPerHole[idx]) : '';
-                    netHtml += `<td class="text-center">${net !== '' ? net : ''}</td>`;
-                    if (net !== '' && net !== undefined) {
-                        total += Number(net);
-                        if (idx < 9) out += Number(net);
-                        else in9 += Number(net);
-                    }
+        // Render scorecard tables based on toggles
+        function renderScorecardTables() {
+            const container = detailsDiv.querySelector('#scorecardTables');
+            container.innerHTML = '';
+            // GROSS
+            if (window.scorecardTypeState[roundId].gross) {
+                let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
+                grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+                grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+                holes.forEach(hole => {
+                    grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
                 });
-                netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-                netHtml += `</tr>`;
-            });
-            netHtml += `</tbody></table></div>`;
-            container.innerHTML += netHtml;
+                grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+                grossHtml += `</tr><tr>`;
+                grossHtml += `<td></td>`;
+                holes.forEach(hole => {
+                    grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+                });
+                grossHtml += `<td colspan="3"></td>`;
+                grossHtml += `</tr></thead><tbody>`;
+                allPlayersData.forEach(player => {
+                    grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                    let out = 0, in9 = 0, total = 0;
+                    holes.forEach((hole, idx) => {
+                        const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                        const score = scoreObj ? scoreObj.gross_strokes : '';
+                        grossHtml += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
+                        if (score !== null && score !== undefined && score !== '') {
+                            total += Number(score);
+                            if (idx < 9) out += Number(score);
+                            else in9 += Number(score);
+                        }
+                    });
+                    grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                    grossHtml += `</tr>`;
+                });
+                grossHtml += `</tbody></table></div>`;
+                container.innerHTML += grossHtml;
+            }
+            // NET
+            if (window.scorecardTypeState[roundId].net) {
+                let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
+                netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+                netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+                holes.forEach(hole => {
+                    netHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+                });
+                netHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+                netHtml += `</tr><tr>`;
+                netHtml += `<td></td>`;
+                holes.forEach(hole => {
+                    netHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+                });
+                netHtml += `<td colspan="3"></td>`;
+                netHtml += `</tr></thead><tbody>`;
+                allPlayersData.forEach(player => {
+                    netHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                    let out = 0, in9 = 0, total = 0;
+                    holes.forEach((hole, idx) => {
+                        const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                        const net = scoreObj ? scoreObj.net_strokes : '';
+                        netHtml += `<td class="text-center">${net !== null && net !== undefined ? net : ''}</td>`;
+                        if (net !== null && net !== undefined && net !== '') {
+                            total += Number(net);
+                            if (idx < 9) out += Number(net);
+                            else in9 += Number(net);
+                        }
+                    });
+                    netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                    netHtml += `</tr>`;
+                });
+                netHtml += `</tbody></table></div>`;
+                container.innerHTML += netHtml;
+            }
+            // TEAM GAME (blank)
+            if (window.scorecardTypeState[roundId].team) {
+                let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
+                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
+                container.innerHTML += teamHtml;
+            }
         }
-        // TEAM GAME (blank)
-        if (window.scorecardTypeState[roundId].team) {
-            let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-            teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
-            container.innerHTML += teamHtml;
-        }
-    }
-    // Initial render
-    renderScorecardTables();
-}
-
-async function fetchRecentRounds() {
-    const { data, error } = await supabase.from('recent_rounds_view').select('*');
-    if (error) throw error;
-    allRecentRounds = data;
-    renderRoundSelector(data);
-}
-
-async function loadPlayerProfile(playerId) {
-    const profileHeader = document.getElementById('profileHeader');
-    profileHeader.innerHTML = `<div class="loader mx-auto"></div>`;
-    const profileRoundsContainer = document.getElementById('profileRoundsContainer');
-    profileRoundsContainer.innerHTML = '';
-    try {
-        const [playerRes, roundsRes] = await Promise.all([
-            supabase.from('Players').select('name, handicap_index').eq('player_id', playerId).single(),
-            supabase.rpc('get_player_rounds', { p_id: playerId })
-        ]);
-        if (playerRes.error) throw playerRes.error;
-        if (roundsRes.error) throw roundsRes.error;
-        renderProfile(playerRes.data, roundsRes.data);
-    } catch (error) {
-        profileHeader.innerHTML = `<div class="card p-5 text-center text-red-600 bg-red-50 border border-red-200"><p>Could not load player profile.</p><p class="text-xs mt-2 text-gray-500">${error.message}</p></div>`;
-    }
-}
-
-// --- Rendering ---
-function renderPlayers(data) {
-    playersTableBody.innerHTML = '';
-    data.forEach(p => {
-        const r = playersTableBody.insertRow();
-        r.className = "hover:bg-gray-50";
-        r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
-    });
-}
-
-function renderTeams(data) {
-    const createPlayerCard = player => {
-        const captainBadge = player.is_captain ? `<span class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Captain</span>` : '';
+        // Initial render
+        renderScorecardTables();
         const draftPick = player.draft_pick ? `<span class="text-sm font-bold text-gray-400 w-6">${player.draft_pick}.</span>` : '<span class="w-6"></span>';
 
         return `
