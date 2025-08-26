@@ -33,6 +33,7 @@ function showLeaderboardTab(tab) {
     });
     document.getElementById(`leaderboard-tab-${tab}`).classList.add('active');
     document.getElementById(`leaderboard-${tab}`).classList.remove('hidden');
+}
 
 // Add event listeners for leaderboard sub-tabs after DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -51,6 +52,7 @@ try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 } catch (error) {
     showError("Supabase initialization failed.", error.message);
+}
 
 // DOM Elements
 const loader = document.getElementById('loader');
@@ -184,183 +186,89 @@ async function renderRoundDetails(roundId) {
     let round = roundPlayers[0];
     if (!round) {
         // fallback: use static info
-        // Remove any previous details
-        let detailsDiv = document.getElementById('roundDetailsDiv');
-        if (detailsDiv) detailsDiv.remove();
-
-        // Get all player results for this round
-        const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
-        // Find round info from static list if not present
-        let round = roundPlayers[0];
-        if (!round) {
-            // fallback: use static info
-            const staticRounds = [
-                { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
-                { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
-                { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
-                { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
-                { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
-            ];
-            round = staticRounds.find(r => r.round_id === roundId);
-        }
-        if (!round) return;
-        // Fetch holes for this course
-        let holes = [];
-        try {
-            if (round && round.course_id) {
-                // TODO: fetch holes from Supabase if needed
-                // For now, use fallback
-                throw new Error('Not implemented');
-            }
-        } catch (e) {
-            // fallback: show blank holes (18 holes, par 4, hdcp 1-18)
-            holes = Array.from({ length: 18 }, (_, i) => ({
-                hole_number: i + 1,
-                hole_par: 4,
-                hole_handicap: i + 1,
-                hole_id: i + 1
-            }));
-        }
-        // Fetch all scores for this round
-        let scores = [];
-        try {
-            const { data: scoresData, error: scoresError } = await supabase
-                .from('Scores')
-                .select('*')
-                .eq('round_id', roundId);
-            if (scoresError)
-            scores = scoresData;
-        } catch (e) {
-            // If error, just use blank scores
-            scores = [];
-        }
-
-        // Scorecard type toggles
-        let scorecardTypes = [
-            { key: 'gross', label: 'Gross', checked: true },
-            { key: 'net', label: 'Net', checked: false },
-            { key: 'team', label: 'Team Game', checked: false }
+        const staticRounds = [
+            { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
+            { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
+            { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
+            { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
+            { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
         ];
-        // If user has toggled before, persist state per round
-        if (!window.scorecardTypeState) window.scorecardTypeState = {};
-        if (!window.scorecardTypeState[roundId]) {
-            window.scorecardTypeState[roundId] = { gross: true, net: false, team: false };
+        round = staticRounds.find(r => r.round_id === roundId);
+    }
+    if (!round) return;
+    // Fetch holes for this course
+    let holes = [];
+    try {
+        if (round && round.course_id) {
+            const { data: holesData, error: holesError } = await supabase
+                .from('Holes')
+                .select('*')
+                .eq('course_id', round.course_id)
+                .order('hole_number');
+            if (holesError) throw holesError;
+            holes = holesData;
         }
-        // Render toggles
-        detailsDiv = document.createElement('div');
-        detailsDiv.id = 'roundDetailsDiv';
-        detailsDiv.className = 'card p-2 overflow-x-auto';
-        const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
-        html += `<div class="flex gap-4 mb-4">`;
-        scorecardTypes.forEach(type => {
-            const checked = window.scorecardTypeState[roundId][type.key] ? 'checked' : '';
-            html += `<label class="inline-flex items-center cursor-pointer"><input type="checkbox" class="scorecard-type-toggle" data-type="${type.key}" ${checked}><span class="ml-2 font-semibold">${type.label}</span></label>`;
+    } catch (e) {
+        // fallback: show blank holes (18 holes, par 4, hdcp 1-18)
+        holes = Array.from({ length: 18 }, (_, i) => ({
+            hole_number: i + 1,
+            hole_par: 4,
+            hole_handicap: i + 1,
+            hole_id: i + 1
+        }));
+    }
+    // Fetch all scores for this round
+    let scores = [];
+    try {
+        const { data: scoresData, error: scoresError } = await supabase
+            .from('Scores')
+            .select('*')
+            .eq('round_id', roundId);
+        if (scoresError) throw scoresError;
+        scores = scoresData;
+    } catch (e) {
+        // If error, just use blank scores
+        scores = [];
+    }
+    // Build scoreboard
+    detailsDiv = document.createElement('div');
+    detailsDiv.id = 'roundDetailsDiv';
+    detailsDiv.className = 'card p-2 overflow-x-auto';
+    const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
+    html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+    html += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+    holes.forEach(hole => {
+        html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+    });
+    html += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+    html += `</tr><tr>`;
+    html += `<td></td>`;
+    holes.forEach(hole => {
+        html += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+    });
+    html += `<td colspan="3"></td>`;
+    html += `</tr></thead><tbody>`;
+    // Show all players, even if they have no scores for this round
+    allPlayersData.forEach(player => {
+        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+        let out = 0, in9 = 0, total = 0;
+        holes.forEach((hole, idx) => {
+            const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+            const score = scoreObj ? scoreObj.gross_strokes : '';
+            html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
+            if (score !== null && score !== undefined && score !== '') {
+                total += Number(score);
+                if (idx < 9) out += Number(score);
+                else in9 += Number(score);
+            }
         });
-        html += `</div>`;
-        html += `<div id="scorecardTables"></div>`;
-        detailsDiv.innerHTML = html;
-        recentRoundsContainer.appendChild(detailsDiv);
-
-        // Handler for toggles
-        detailsDiv.querySelectorAll('.scorecard-type-toggle').forEach(cb => {
-            cb.addEventListener('change', (e) => {
-                const type = cb.dataset.type;
-                window.scorecardTypeState[roundId][type] = cb.checked;
-                renderScorecardTables();
-            });
-        });
-
-        // Render scorecard tables based on toggles
-        function renderScorecardTables() {
-            const container = detailsDiv.querySelector('#scorecardTables');
-            container.innerHTML = '';
-            // GROSS
-            if (window.scorecardTypeState[roundId].gross) {
-                let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
-                grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-                grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-                holes.forEach(hole => {
-                    grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-                });
-                grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-                grossHtml += `</tr><tr>`;
-                grossHtml += `<td></td>`;
-                holes.forEach(hole => {
-                    grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-                });
-                grossHtml += `<td colspan="3"></td>`;
-                grossHtml += `</tr></thead><tbody>`;
-                allPlayersData.forEach(player => {
-                    grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-                    let out = 0, in9 = 0, total = 0;
-                    holes.forEach((hole, idx) => {
-                        const scoreObj = scores && scores.find(s => s.player_id === player.player_id && s.hole_id === hole.hole_id);
-                        const val = scoreObj ? scoreObj.gross_score : '';
-                        grossHtml += `<td class="text-center">${val !== undefined ? val : ''}</td>`;
-                        if (idx < 9) out += Number(val) || 0;
-                        else in9 += Number(val) || 0;
-                        total += Number(val) || 0;
-                    });
-                    grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-                    grossHtml += `</tr>`;
-                });
-                grossHtml += `</tbody></table></div>`;
-                container.innerHTML += grossHtml;
-            }
-            // NET
-            if (window.scorecardTypeState[roundId].net) {
-                let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
-                netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-                netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-                holes.forEach(hole => {
-                    netHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-                });
-                netHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-                netHtml += `</tr><tr>`;
-                netHtml += `<td></td>`;
-                holes.forEach(hole => {
-                    netHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-                });
-                netHtml += `<td colspan="3"></td>`;
-                netHtml += `</tr></thead><tbody>`;
-                allPlayersData.forEach(player => {
-                    netHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-                    let out = 0, in9 = 0, total = 0;
-                    // Calculate net per hole
-                    const playerHandicap = Number(player.handicap_index) || 0;
-                    // Distribute strokes: 1 per hole for lowest hdcp holes, up to player's handicap
-                    // For 18 holes, if HCP > 18, each hole gets 1, then top (HCP-18) holes get 2
-                    let strokesPerHole = Array(18).fill(0);
-                    for (let i = 0; i < Math.floor(playerHandicap); i++) {
-                        // Find the hole with the i-th lowest handicap (hole_handicap)
-                        let idx = holes.findIndex(h => h.hole_handicap === ((i % 18) + 1));
-                        if (idx !== -1) strokesPerHole[idx] += 1;
-                    }
-                    holes.forEach((hole, idx) => {
-                        const scoreObj = scores && scores.find(s => s.player_id === player.player_id && s.hole_id === hole.hole_id);
-                        const gross = scoreObj ? scoreObj.gross_score : undefined;
-                        let net = gross !== undefined ? (Number(gross) - strokesPerHole[idx]) : '';
-                        netHtml += `<td class="text-center">${net !== '' ? net : ''}</td>`;
-                        if (idx < 9) out += Number(net) || 0;
-                        else in9 += Number(net) || 0;
-                        total += Number(net) || 0;
-                    });
-                    netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-                    netHtml += `</tr>`;
-                });
-                netHtml += `</tbody></table></div>`;
-                container.innerHTML += netHtml;
-            }
-            // TEAM GAME (blank)
-            if (window.scorecardTypeState[roundId].team) {
-                let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
-                container.innerHTML += teamHtml;
-            }
-        }
-    // Initial render
-    renderScorecardTables();
+        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+        html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+    detailsDiv.innerHTML = html;
+    recentRoundsContainer.appendChild(detailsDiv);
 }
 
 async function fetchRecentRounds() {
