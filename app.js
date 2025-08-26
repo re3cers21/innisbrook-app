@@ -233,7 +233,7 @@ async function renderRoundDetails(roundId) {
     html += `</tr><tr>`;
     html += `<td></td>`;
     holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">${hole.hole_par}<br><span class="text-xs">${hole.hole_handicap}</span></td>`;
+        html += `<td class="text-center text-gray-500">Par${hole.hole_par}<br><span class="text-xs">Hdcp${hole.hole_handicap}</span></td>`;
     });
     html += `<td colspan="3"></td>`;
     html += `</tr></thead><tbody>`;
