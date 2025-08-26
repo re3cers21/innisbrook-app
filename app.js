@@ -70,11 +70,10 @@ const playersTableBody = document.getElementById('playersTableBody');
 const teamHomzaContainer = document.getElementById('teamHomzaContainer');
 const teamKinnairdContainer = document.getElementById('teamKinnairdContainer');
 const recentRoundsContainer = document.getElementById('recentRoundsContainer');
-const handicapGrid = document.getElementById('handicapGrid');
-const searchInput = document.getElementById('searchInput');
+// Removed: handicapGrid and searchInput, as handicaps section is gone
 const backButton = document.getElementById('backButton');
 
-let allHandicapData = [];
+// Removed: allHandicapData, as handicaps section is gone
 let allPlayersData = [];
 let lastActiveTab = 'players';
 
@@ -140,12 +139,7 @@ async function fetchPlayers() {
     renderTeams(allPlayersData);
 }
 
-async function fetchHandicaps() {
-    const { data, error } = await supabase.from('course_handicap_view').select('*');
-    if (error) throw error;
-    allHandicapData = data;
-    renderHandicaps(allHandicapData);
-}
+// Removed: fetchHandicaps, as handicaps section is gone
 
 
 function renderRoundSelector(rounds) {
@@ -277,17 +271,7 @@ function renderTeams(data) {
     teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
 }
 
-function renderHandicaps(data) {
-    const noResults = document.getElementById('noResults');
-    handicapGrid.innerHTML = '';
-    noResults.classList.toggle('hidden', data.length > 0);
-    data.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card p-5';
-        card.innerHTML = `<div><div class="flex items-start justify-between"><div><h3 class="text-xl font-bold text-gray-900 clickable-player" data-player-id="${item.player_id}">${item.player_name}</h3><p class="text-sm text-gray-500">${item.course_name}</p></div><div class="text-right"><span class="text-3xl font-bold text-emerald-600">${item.course_handicap}</span><p class="text-xs text-gray-500 font-medium">Handicap</p></div></div><div class="mt-4 border-t border-gray-200 pt-4"><dl><div class="text-sm"><dt class="text-gray-500">Tee</dt><dd class="font-medium text-gray-800">${item.tee_name}</dd></div></dl></div></div>`;
-        handicapGrid.appendChild(card);
-    });
-}
+// Removed: renderHandicaps, as handicaps section is gone
 
 function renderRecentRounds(data) {
     recentRoundsContainer.innerHTML = '';
@@ -349,21 +333,13 @@ function showError(message, details) {
     errorDetails.textContent = `Details: ${details}`;
 }
 
-function filterHandicaps() {
-    const query = searchInput.value.toLowerCase();
-    const filteredData = allHandicapData.filter(item =>
-        item.player_name.toLowerCase().includes(query) ||
-        item.course_name.toLowerCase().includes(query) ||
-        item.tee_name.toLowerCase().includes(query)
-    );
-    renderHandicaps(filteredData);
-}
+// Removed: filterHandicaps, as handicaps section is gone
 
 // --- Main Execution & Event Listeners ---
 async function initializeApp() {
     loader.classList.remove('hidden');
     try {
-        await Promise.all([fetchPlayers(), fetchRecentRounds(), fetchHandicaps()]);
+        await Promise.all([fetchPlayers(), fetchRecentRounds()]);
         loader.classList.add('hidden');
         showView('players');
         showPlayersSubView('all-players');
@@ -378,7 +354,7 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => showV
 document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
 document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
 backButton.addEventListener('click', () => showView(lastActiveTab));
-searchInput.addEventListener('input', filterHandicaps);
+// Removed: searchInput event listener, as handicaps section is gone
 document.getElementById('appContainer').addEventListener('click', (e) => {
     if (e.target.classList.contains('clickable-player')) {
         const playerId = e.target.dataset.playerId;
