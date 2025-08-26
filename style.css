@@ -18,6 +18,52 @@ body.dark-mode {
     background-blend-mode: multiply;
 }
 
+.dark-mode header,
+.dark-mode .bg-white,
+.dark-mode .border-gray-200 {
+    background: #14281a !important;
+    color: #e0ffe0 !important;
+    border-color: #204d2a !important;
+    box-shadow: 0 2px 8px 0 rgba(16,36,21,0.18);
+}
+.dark-mode .shadow-md,
+.dark-mode .shadow,
+.dark-mode .card {
+    box-shadow: 0 8px 32px 0 rgba(16, 36, 21, 0.25), 0 1.5px 6px 0 rgba(0,0,0,0.18) !important;
+}
+.dark-mode .bg-white,
+.dark-mode .card {
+    background: rgba(16, 36, 21, 0.97) !important;
+    color: #e0ffe0 !important;
+}
+.dark-mode .text-gray-800,
+.dark-mode .text-gray-900,
+.dark-mode .text-gray-700,
+.dark-mode .text-gray-600,
+.dark-mode .text-gray-500 {
+    color: #e0ffe0 !important;
+}
+.dark-mode .bg-gray-200 {
+    background: #183c1a !important;
+}
+.dark-mode .bg-red-50 {
+    background: #2e2e2e !important;
+    color: #ffbdbd !important;
+}
+.dark-mode .border-red-200 {
+    border-color: #b71c1c !important;
+}
+.dark-mode input,
+.dark-mode textarea {
+    background: #1a2d1a !important;
+    color: #e0ffe0 !important;
+    border-color: #2e7d32 !important;
+}
+.dark-mode input::placeholder {
+    color: #b9f6ca !important;
+    opacity: 0.7;
+}
+
 .dark-mode .card {
     background: rgba(16, 36, 21, 0.97);
     color: #e0ffe0;
