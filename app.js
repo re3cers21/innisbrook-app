@@ -144,20 +144,22 @@ async function fetchPlayers() {
 
 function renderRoundSelector(rounds) {
     recentRoundsContainer.innerHTML = '';
-    if (!rounds || rounds.length === 0) {
-        recentRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No rounds found.</div>`;
-        return;
-    }
-    // Get unique rounds by round_id and round_date
-    const uniqueRounds = Array.from(
-        new Map(rounds.map(r => [r.round_id, r])).values()
-    );
-    // Sort by date descending
-    uniqueRounds.sort((a, b) => new Date(b.round_date) - new Date(a.round_date));
+    // Define all 5 rounds (static info or fallback if not in data)
+    const allRounds = [
+        { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
+        { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
+        { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
+        { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
+        { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
+    ];
+    // Merge with actual data if present
+    const roundMap = {};
+    (rounds || []).forEach(r => { roundMap[r.round_id] = r; });
+    const mergedRounds = allRounds.map(r => roundMap[r.round_id] ? { ...r, ...roundMap[r.round_id] } : r);
     // Render round selector buttons
     const selectorDiv = document.createElement('div');
     selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
-    uniqueRounds.forEach(round => {
+    mergedRounds.forEach(round => {
         const btn = document.createElement('button');
         btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
         btn.textContent = `${round.course_name} (${new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })})`;
@@ -170,7 +172,7 @@ function renderRoundSelector(rounds) {
     });
     recentRoundsContainer.appendChild(selectorDiv);
     // Show details for selected round or first round
-    const showId = selectedRoundId || (uniqueRounds[0] && uniqueRounds[0].round_id);
+    const showId = selectedRoundId || mergedRounds[0].round_id;
     renderRoundDetails(showId);
 }
 
@@ -180,26 +182,40 @@ async function renderRoundDetails(roundId) {
     if (detailsDiv) detailsDiv.remove();
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
-    if (!roundPlayers.length) return;
-    const round = roundPlayers[0];
+    // Find round info from static list if not present
+    let round = roundPlayers[0];
+    if (!round) {
+        // fallback: use static info
+        const staticRounds = [
+            { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
+            { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
+            { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
+            { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
+            { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
+        ];
+        round = staticRounds.find(r => r.round_id === roundId);
+    }
+    if (!round) return;
     // Fetch holes for this course
     let holes = [];
     try {
-        const { data: holesData, error: holesError } = await supabase
-            .from('Holes')
-            .select('*')
-            .eq('course_id', round.course_id)
-            .order('hole_number');
-        if (holesError) throw holesError;
-        holes = holesData;
+        if (round && round.course_id) {
+            const { data: holesData, error: holesError } = await supabase
+                .from('Holes')
+                .select('*')
+                .eq('course_id', round.course_id)
+                .order('hole_number');
+            if (holesError) throw holesError;
+            holes = holesData;
+        }
     } catch (e) {
-        // fallback: show error
-        detailsDiv = document.createElement('div');
-        detailsDiv.id = 'roundDetailsDiv';
-        detailsDiv.className = 'card p-6';
-        detailsDiv.innerHTML = `<div class="text-red-600">Could not load holes for this course.</div>`;
-        recentRoundsContainer.appendChild(detailsDiv);
-        return;
+        // fallback: show blank holes (18 holes, par 4, hdcp 1-18)
+        holes = Array.from({ length: 18 }, (_, i) => ({
+            hole_number: i + 1,
+            hole_par: 4,
+            hole_handicap: i + 1,
+            hole_id: i + 1
+        }));
     }
     // Fetch all scores for this round
     let scores = [];
@@ -211,12 +227,8 @@ async function renderRoundDetails(roundId) {
         if (scoresError) throw scoresError;
         scores = scoresData;
     } catch (e) {
-        detailsDiv = document.createElement('div');
-        detailsDiv.id = 'roundDetailsDiv';
-        detailsDiv.className = 'card p-6';
-        detailsDiv.innerHTML = `<div class="text-red-600">Could not load scores for this round.</div>`;
-        recentRoundsContainer.appendChild(detailsDiv);
-        return;
+        // If error, just use blank scores
+        scores = [];
     }
     // Build scoreboard
     detailsDiv = document.createElement('div');
