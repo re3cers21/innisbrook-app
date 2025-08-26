@@ -171,11 +171,11 @@ function renderRoundSelector(rounds) {
         selectorDiv.appendChild(btn);
     });
     recentRoundsContainer.appendChild(selectorDiv);
-    // Show details for selected round or first round
-    const showId = selectedRoundId || mergedRounds[0].round_id;
-    // Remove all previous scorecards before rendering a new one
+    // Only show a scorecard if a round is selected
     document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
-    renderRoundDetails(showId);
+    if (selectedRoundId) {
+        renderRoundDetails(selectedRoundId);
+    }
 }
 
 async function renderRoundDetails(roundId) {
