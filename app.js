@@ -237,14 +237,12 @@ async function renderRoundDetails(roundId) {
     });
     html += `<td colspan="3"></td>`;
     html += `</tr></thead><tbody>`;
-    // Get unique players for this round
-    const playerMap = {};
-    roundPlayers.forEach(p => { playerMap[p.player_id] = p.player_name; });
-    Object.entries(playerMap).forEach(([player_id, player_name]) => {
-        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player_id}">${player_name}</td>`;
+    // Show all players, even if they have no scores for this round
+    allPlayersData.forEach(player => {
+        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
         let out = 0, in9 = 0, total = 0;
         holes.forEach((hole, idx) => {
-            const scoreObj = scores.find(s => s.player_id == player_id && s.hole_id == hole.hole_id);
+            const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
             const score = scoreObj ? scoreObj.gross_strokes : '';
             html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
             if (score !== null && score !== undefined && score !== '') {
