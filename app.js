@@ -230,45 +230,131 @@ async function renderRoundDetails(roundId) {
         // If error, just use blank scores
         scores = [];
     }
-    // Build scoreboard
+    // Scorecard type toggles
+    let scorecardTypes = [
+        { key: 'gross', label: 'Gross', checked: true },
+        { key: 'net', label: 'Net', checked: false },
+        { key: 'team', label: 'Team Game', checked: false }
+    ];
+    if (!window.scorecardTypeState) window.scorecardTypeState = {};
+    if (!window.scorecardTypeState[roundId]) {
+        window.scorecardTypeState[roundId] = { gross: true, net: false, team: false };
+    }
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
     detailsDiv.className = 'card p-2 overflow-x-auto';
     const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
     let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
-    html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-    html += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-    holes.forEach(hole => {
-        html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+    html += `<div class="flex gap-4 mb-4">`;
+    scorecardTypes.forEach(type => {
+        const checked = window.scorecardTypeState[roundId][type.key] ? 'checked' : '';
+        html += `<label class="inline-flex items-center cursor-pointer"><input type="checkbox" class="scorecard-type-toggle" data-type="${type.key}" ${checked}><span class="ml-2 font-semibold">${type.label}</span></label>`;
     });
-    html += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-    html += `</tr><tr>`;
-    html += `<td></td>`;
-    holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-    });
-    html += `<td colspan="3"></td>`;
-    html += `</tr></thead><tbody>`;
-    // Show all players, even if they have no scores for this round
-    allPlayersData.forEach(player => {
-        html += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-        let out = 0, in9 = 0, total = 0;
-        holes.forEach((hole, idx) => {
-            const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
-            const score = scoreObj ? scoreObj.gross_strokes : '';
-            html += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
-            if (score !== null && score !== undefined && score !== '') {
-                total += Number(score);
-                if (idx < 9) out += Number(score);
-                else in9 += Number(score);
-            }
-        });
-        html += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-        html += `</tr>`;
-    });
-    html += `</tbody></table>`;
+    html += `</div>`;
+    html += `<div id="scorecardTables"></div>`;
     detailsDiv.innerHTML = html;
     recentRoundsContainer.appendChild(detailsDiv);
+
+    // Handler for toggles
+    detailsDiv.querySelectorAll('.scorecard-type-toggle').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const type = cb.dataset.type;
+            window.scorecardTypeState[roundId][type] = cb.checked;
+            renderScorecardTables();
+        });
+    });
+
+    // Render scorecard tables based on toggles
+    function renderScorecardTables() {
+        const container = detailsDiv.querySelector('#scorecardTables');
+        container.innerHTML = '';
+        // GROSS
+        if (window.scorecardTypeState[roundId].gross) {
+            let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
+            grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+            grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+            holes.forEach(hole => {
+                grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+            });
+            grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+            grossHtml += `</tr><tr>`;
+            grossHtml += `<td></td>`;
+            holes.forEach(hole => {
+                grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+            });
+            grossHtml += `<td colspan="3"></td>`;
+            grossHtml += `</tr></thead><tbody>`;
+            allPlayersData.forEach(player => {
+                grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                let out = 0, in9 = 0, total = 0;
+                holes.forEach((hole, idx) => {
+                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                    const score = scoreObj ? scoreObj.gross_strokes : '';
+                    grossHtml += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
+                    if (score !== null && score !== undefined && score !== '') {
+                        total += Number(score);
+                        if (idx < 9) out += Number(score);
+                        else in9 += Number(score);
+                    }
+                });
+                grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                grossHtml += `</tr>`;
+            });
+            grossHtml += `</tbody></table></div>`;
+            container.innerHTML += grossHtml;
+        }
+        // NET
+        if (window.scorecardTypeState[roundId].net) {
+            let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
+            netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+            netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+            holes.forEach(hole => {
+                netHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+            });
+            netHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+            netHtml += `</tr><tr>`;
+            netHtml += `<td></td>`;
+            holes.forEach(hole => {
+                netHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+            });
+            netHtml += `<td colspan="3"></td>`;
+            netHtml += `</tr></thead><tbody>`;
+            allPlayersData.forEach(player => {
+                netHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                let out = 0, in9 = 0, total = 0;
+                // Calculate net per hole
+                const playerHandicap = Number(player.handicap_index) || 0;
+                let strokesPerHole = Array(holes.length).fill(0);
+                for (let i = 0; i < Math.floor(playerHandicap); i++) {
+                    let idx = holes.findIndex(h => h.hole_handicap === ((i % holes.length) + 1));
+                    if (idx !== -1) strokesPerHole[idx] += 1;
+                }
+                holes.forEach((hole, idx) => {
+                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                    const gross = scoreObj ? scoreObj.gross_strokes : undefined;
+                    let net = gross !== undefined && gross !== null && gross !== '' ? (Number(gross) - strokesPerHole[idx]) : '';
+                    netHtml += `<td class="text-center">${net !== '' ? net : ''}</td>`;
+                    if (net !== '' && net !== undefined) {
+                        total += Number(net);
+                        if (idx < 9) out += Number(net);
+                        else in9 += Number(net);
+                    }
+                });
+                netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                netHtml += `</tr>`;
+            });
+            netHtml += `</tbody></table></div>`;
+            container.innerHTML += netHtml;
+        }
+        // TEAM GAME (blank)
+        if (window.scorecardTypeState[roundId].team) {
+            let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
+            teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
+            container.innerHTML += teamHtml;
+        }
+    }
+    // Initial render
+    renderScorecardTables();
 }
 
 async function fetchRecentRounds() {
