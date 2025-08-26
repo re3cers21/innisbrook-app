@@ -20,7 +20,9 @@ body.dark-mode {
 
 .dark-mode header,
 .dark-mode .bg-white,
-.dark-mode .border-gray-200 {
+.dark-mode .bg-gray-50,
+.dark-mode .border-gray-200,
+.dark-mode .divide-gray-200 {
     background: #14281a !important;
     color: #e0ffe0 !important;
     border-color: #204d2a !important;
@@ -32,6 +34,7 @@ body.dark-mode {
     box-shadow: 0 8px 32px 0 rgba(16, 36, 21, 0.25), 0 1.5px 6px 0 rgba(0,0,0,0.18) !important;
 }
 .dark-mode .bg-white,
+.dark-mode .bg-gray-50,
 .dark-mode .card {
     background: rgba(16, 36, 21, 0.97) !important;
     color: #e0ffe0 !important;
