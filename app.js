@@ -1,3 +1,14 @@
+// Fetch all recent rounds for the round selector
+async function fetchRecentRounds() {
+    try {
+        const { data, error } = await supabase.from('recent_rounds_view').select('*');
+        if (error) throw error;
+        allRecentRounds = data;
+        renderRoundSelector(data);
+    } catch (e) {
+        showError('Failed to fetch recent rounds.', e.message);
+    }
+}
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
 let allRecentRounds = [];
 let selectedRoundId = null;
