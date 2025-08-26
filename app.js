@@ -341,11 +341,11 @@ async function renderRoundDetails(roundId) {
                         const rel = Number(score) - Number(hole.hole_par);
                         // Birdie
                         if (rel === -1) cellClass = 'golf-birdie';
-                        // Eagle or better
+                        // Eagle or better (use same single circle as birdie)
                         else if (rel <= -2) cellClass = 'golf-eagle';
                         // Bogey
                         else if (rel === 1) cellClass = 'golf-bogey';
-                        // Double bogey or worse
+                        // Double bogey or worse (use same single box as bogey)
                         else if (rel >= 2) cellClass = 'golf-double-bogey';
                         total += Number(score);
                         if (idx < 9) out += Number(score);
@@ -386,11 +386,11 @@ async function renderRoundDetails(roundId) {
                         const rel = Number(net) - Number(hole.hole_par);
                         // Birdie
                         if (rel === -1) cellClass = 'golf-birdie';
-                        // Eagle or better
+                        // Eagle or better (use same single circle as birdie)
                         else if (rel <= -2) cellClass = 'golf-eagle';
                         // Bogey
                         else if (rel === 1) cellClass = 'golf-bogey';
-                        // Double bogey or worse
+                        // Double bogey or worse (use same single box as bogey)
                         else if (rel >= 2) cellClass = 'golf-double-bogey';
                         total += Number(net);
                         if (idx < 9) out += Number(net);
