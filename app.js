@@ -180,38 +180,20 @@ async function renderRoundDetails(roundId) {
     if (detailsDiv) detailsDiv.remove();
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
-        let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
-        html += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead>`;
-        // Header row: Hole numbers and player names
-        html += `<tr>`;
-        html += `<th class="px-2 py-1 text-left font-bold">Hole</th>`;
-        holes.forEach(hole => {
-            html += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-        });
-        html += `</tr>`;
-        // Par row
-        html += `<tr>`;
-        html += `<th class="px-2 py-1 text-left font-bold">Par</th>`;
-        holes.forEach(hole => {
-            html += `<td class="text-center text-gray-700">${hole.hole_par}</td>`;
-        });
-        html += `</tr>`;
-        // Hdcp row
-        html += `<tr>`;
-        html += `<th class="px-2 py-1 text-left font-bold">Hdcp</th>`;
-        holes.forEach(hole => {
-            html += `<td class="text-center text-gray-500">${hole.hole_handicap}</td>`;
-        });
-        html += `</tr>`;
-        // Separator row
-        html += `<tr><td colspan="${holes.length + 1}" style="border-bottom:2px solid #43a047;height:8px;"></td></tr>`;
-        // Player rows
-        html += `<tr>`;
-        html += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-        allPlayersData.forEach(player => {
-            html += `<th class="px-2 py-1 text-center font-bold"><span class="clickable-player" data-player-id="${player.player_id}">${player.name}</span></th>`;
-        });
-        html += `</tr></thead><tbody>`;
+    if (!roundPlayers.length) return;
+    const round = roundPlayers[0];
+    // Fetch holes for this course
+    let holes = [];
+    try {
+        const { data: holesData, error: holesError } = await supabase
+            .from('Holes')
+            .select('*')
+            .eq('course_id', round.course_id)
+            .order('hole_number');
+        if (holesError) throw holesError;
+        holes = holesData;
+    } catch (e) {
+        // fallback: show error
         detailsDiv = document.createElement('div');
         detailsDiv.id = 'roundDetailsDiv';
         detailsDiv.className = 'card p-6';
@@ -251,7 +233,7 @@ async function renderRoundDetails(roundId) {
     html += `</tr><tr>`;
     html += `<td></td>`;
     holes.forEach(hole => {
-        html += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+        html += `<td class="text-center text-gray-500">Par${hole.hole_par}<br><span class="text-xs">Hdcp${hole.hole_handicap}</span></td>`;
     });
     html += `<td colspan="3"></td>`;
     html += `</tr></thead><tbody>`;
