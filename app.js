@@ -239,7 +239,7 @@ async function renderRoundDetails(roundId) {
             { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
         ];
         round = staticRounds.find(r => r.round_id === roundId);
-    }
+    // End of renderRoundDetails
     if (!round) return;
     // Fetch holes for this course
     let holes = [];
@@ -278,12 +278,13 @@ async function renderRoundDetails(roundId) {
     // Scorecard type toggles
     let scorecardTypes = [
         { key: 'gross', label: 'Gross', checked: true },
-        { key: 'net', label: 'Net', checked: false },
-        { key: 'team', label: 'Team Game', checked: false }
+        { key: 'net', label: 'Net', checked: true },
+        { key: 'team', label: 'Team Game', checked: true }
     ];
     if (!window.scorecardTypeState) window.scorecardTypeState = {};
+    // Always set all toggles ON by default for each round
     if (!window.scorecardTypeState[roundId]) {
-        window.scorecardTypeState[roundId] = { gross: true, net: false, team: false };
+        window.scorecardTypeState[roundId] = { gross: true, net: true, team: true };
     }
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
@@ -312,46 +313,6 @@ async function renderRoundDetails(roundId) {
     // Render scorecard tables based on toggles
     function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
-        container.innerHTML = '';
-        // GROSS
-        if (window.scorecardTypeState[roundId].gross) {
-            let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
-            grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-            grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
-            holes.forEach(hole => {
-                grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
-            });
-            grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
-            grossHtml += `</tr><tr>`;
-            grossHtml += `<td></td>`;
-            holes.forEach(hole => {
-                grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
-            });
-            grossHtml += `<td colspan="3"></td>`;
-            grossHtml += `</tr></thead><tbody>`;
-            allPlayersData.forEach(player => {
-                grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
-                let out = 0, in9 = 0, total = 0;
-                holes.forEach((hole, idx) => {
-                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
-                    const score = scoreObj ? scoreObj.gross_strokes : '';
-                    grossHtml += `<td class="text-center">${score !== null && score !== undefined ? score : ''}</td>`;
-                    if (score !== null && score !== undefined && score !== '') {
-                        total += Number(score);
-                        if (idx < 9) out += Number(score);
-                        else in9 += Number(score);
-                    }
-                });
-                grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
-                grossHtml += `</tr>`;
-            });
-            grossHtml += `</tbody></table></div>`;
-            container.innerHTML += grossHtml;
-        }
-        // NET
-        // Render scorecard tables based on toggles
-        function renderScorecardTables() {
-            const container = detailsDiv.querySelector('#scorecardTables');
             container.innerHTML = '';
             // GROSS
             if (window.scorecardTypeState[roundId].gross) {
@@ -430,34 +391,24 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += teamHtml;
             }
         }
+    // Initial render
+    renderScorecardTables();
+                    netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                    netHtml += `</tr>`;
+                });
+                netHtml += `</tbody></table></div>`;
+                container.innerHTML += netHtml;
+            }
+            // TEAM GAME (blank)
+            if (window.scorecardTypeState[roundId].team) {
+                let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
+                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
+                container.innerHTML += teamHtml;
+            }
+        }
         // Initial render
         renderScorecardTables();
-        const draftPick = player.draft_pick ? `<span class="text-sm font-bold text-gray-400 w-6">${player.draft_pick}.</span>` : '<span class="w-6"></span>';
-
-        return `
-            <div class="card p-4 flex items-center justify-between">
-
-                <div class="flex items-center">
-                    ${draftPick}
-                    <p class="font-semibold text-gray-800 clickable-player" data-player-id="${player.player_id}">${player.name}</p>
-                    ${captainBadge}
-                </div>
-                <p class="text-sm text-gray-600 font-medium">HCP: ${player.handicap_index}</p>
-            </div>`;
-    };
-    
-    const sortByCaptainAndPick = (a, b) => {
-        if (a.is_captain && !b.is_captain) return -1;
-        if (!a.is_captain && b.is_captain) return 1;
-        return (a.draft_pick || 99) - (b.draft_pick || 99);
-    };
-
-    const teamHomzaHtml = data.filter(p => p.team === 'Homza').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
-    const teamKinnairdHtml = data.filter(p => p.team === 'Kinnaird').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
-
-    teamHomzaContainer.innerHTML = teamHomzaHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
-    teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
-}
+    }
 
 // Removed: renderHandicaps, as handicaps section is gone
 
