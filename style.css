@@ -1,77 +1,81 @@
 /* Golf scorecard visual indicators */
-.golf-birdie {
+
+/* Golf scorecard visual indicators - improved stacking and sizing */
+.golf-birdie, .golf-eagle, .golf-bogey, .golf-double-bogey {
     position: relative;
     z-index: 1;
+    background: transparent;
 }
 .golf-birdie::after {
     content: '';
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1.7em;
-    height: 1.7em;
+    width: 1.5em;
+    height: 1.5em;
     border: 2px solid #e53935;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     pointer-events: none;
+    background: transparent;
+    z-index: 2;
 }
-.golf-eagle {
-    position: relative;
-    z-index: 1;
-}
-.golf-eagle::after, .golf-eagle::before {
+.golf-eagle::before, .golf-eagle::after {
     content: '';
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 2em;
-    height: 2em;
+    width: 1.7em;
+    height: 1.7em;
     border: 2px solid #e53935;
     border-radius: 50%;
     pointer-events: none;
-}
-.golf-eagle::after {
-    transform: translate(-50%, -50%) scale(1.1);
+    background: transparent;
+    z-index: 2;
 }
 .golf-eagle::before {
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translate(-50%, -50%) scale(1.18);
 }
-.golf-bogey {
-    position: relative;
-    z-index: 1;
+.golf-eagle::after {
+    transform: translate(-50%, -50%) scale(0.82);
 }
 .golf-bogey::after {
     content: '';
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 1.7em;
-    height: 1.7em;
+    width: 1.5em;
+    height: 1.5em;
     border: 2px solid #222;
     border-radius: 0.25em;
     transform: translate(-50%, -50%);
     pointer-events: none;
+    background: transparent;
+    z-index: 2;
 }
-.golf-double-bogey {
-    position: relative;
-    z-index: 1;
-}
-.golf-double-bogey::after, .golf-double-bogey::before {
+.golf-double-bogey::before, .golf-double-bogey::after {
     content: '';
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 2em;
-    height: 2em;
+    width: 1.7em;
+    height: 1.7em;
     border: 2px solid #222;
     border-radius: 0.25em;
     pointer-events: none;
-}
-.golf-double-bogey::after {
-    transform: translate(-50%, -50%) scale(1.1);
+    background: transparent;
+    z-index: 2;
 }
 .golf-double-bogey::before {
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translate(-50%, -50%) scale(1.18);
+}
+.golf-double-bogey::after {
+    transform: translate(-50%, -50%) scale(0.82);
+}
+/* Prevent overlap: only one indicator per cell, and ensure cell content is above indicators */
+.golf-birdie > *, .golf-eagle > *, .golf-bogey > *, .golf-double-bogey > * {
+    position: relative;
+    z-index: 3;
 }
 
 body {
