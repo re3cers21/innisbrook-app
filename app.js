@@ -575,8 +575,12 @@ async function renderRoundDetails(roundId) {
                         const team2 = match[0].team2;
                         let team1Players = '', team2Players = '';
                         if (window.allPlayers && Array.isArray(window.allPlayers) && window.hiloMatchups && Array.isArray(window.hiloMatchups)) {
-                            const t1ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === team1).map(m => m.player_id);
-                            const t2ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === team2).map(m => m.player_id);
+                            const t1ids = window.hiloMatchups
+                                .filter(m => m.round_id == roundId && m.match_number == matchNum && m.team === team1)
+                                .map(m => m.player_id);
+                            const t2ids = window.hiloMatchups
+                                .filter(m => m.round_id == roundId && m.match_number == matchNum && m.team === team2)
+                                .map(m => m.player_id);
                             team1Players = t1ids.map(pid => {
                                 const p = window.allPlayers.find(pl => pl.player_id == pid);
                                 return p ? p.name : '';
