@@ -647,32 +647,35 @@ async function renderRoundDetails(roundId) {
 
                                 // Use the per-round scores instead of global detailed_scores
                                 if (scores && scores.length) {
-                                    // Team 1 Low/High
-                                    let t1Low = null, t1High = null;
-                                    t1ids.forEach(pid => {
+                                    // Team 1
+                                    const t1Scores = t1ids.map(pid => {
                                         const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
-                                        if (!sc) return;
-                                        if (sc.net_strokes == row.team1_low && t1Low === null) t1Low = pid;
-                                        if (sc.net_strokes == row.team1_high && t1High === null) t1High = pid;
-                                    });
-                                    // Team 2 Low/High
-                                    let t2Low = null, t2High = null;
-                                    t2ids.forEach(pid => {
+                                        return sc ? { pid, net: sc.net_strokes } : null;
+                                    }).filter(Boolean);
+                                    // Sort by net score, then by player id to break ties
+                                    t1Scores.sort((a, b) => a.net - b.net || a.pid - b.pid);
+                                    if (t1Scores.length > 0) {
+                                        t1LowInitials = getInitials(t1Scores[0].pid);
+                                        if (t1Scores.length > 1) {
+                                            t1HighInitials = getInitials(t1Scores[t1Scores.length - 1].pid);
+                                        } else {
+                                            t1HighInitials = t1LowInitials;
+                                        }
+                                    }
+                                    // Team 2
+                                    const t2Scores = t2ids.map(pid => {
                                         const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
-                                        if (!sc) return;
-                                        if (sc.net_strokes == row.team2_low && t2Low === null) t2Low = pid;
-                                        if (sc.net_strokes == row.team2_high && t2High === null) t2High = pid;
-                                    });
-                                    // Get initials
-                                    const getInitials = pid => {
-                                        const p = window.allPlayers.find(pl => pl.player_id == pid);
-                                        if (!p) return '';
-                                        return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
-                                    };
-                                    t1LowInitials = t1Low ? getInitials(t1Low) : '';
-                                    t1HighInitials = t1High ? getInitials(t1High) : '';
-                                    t2LowInitials = t2Low ? getInitials(t2Low) : '';
-                                    t2HighInitials = t2High ? getInitials(t2High) : '';
+                                        return sc ? { pid, net: sc.net_strokes } : null;
+                                    }).filter(Boolean);
+                                    t2Scores.sort((a, b) => a.net - b.net || a.pid - b.pid);
+                                    if (t2Scores.length > 0) {
+                                        t2LowInitials = getInitials(t2Scores[0].pid);
+                                        if (t2Scores.length > 1) {
+                                            t2HighInitials = getInitials(t2Scores[t2Scores.length - 1].pid);
+                                        } else {
+                                            t2HighInitials = t2LowInitials;
+                                        }
+                                    }
                                 }
                             }
                             // Add initials next to scores
