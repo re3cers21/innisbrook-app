@@ -791,8 +791,6 @@ async function renderRoundDetails(roundId) {
     renderScorecardTables();
 }
 
-// Removed: renderHandicaps, as handicaps section is gone
-
 function renderRecentRounds(data) {
     recentRoundsContainer.innerHTML = '';
     if (data.length === 0) {
