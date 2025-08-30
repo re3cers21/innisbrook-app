@@ -1,3 +1,11 @@
+function renderPlayers(data) {
+    playersTableBody.innerHTML = '';
+    data.forEach(p => {
+        const r = playersTableBody.insertRow();
+        r.className = "hover:bg-gray-50";
+        r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
+    });
+}
 async function fetchAllRounds() {
     const { data, error } = await supabase
         .from('Rounds')
