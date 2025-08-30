@@ -704,6 +704,88 @@ async function renderRoundDetails(roundId) {
             teamHtml += `</div>`;
             container.innerHTML += teamHtml;
         }
+        // SINGLES MATCHPLAY for Rounds 3 and 4
+        if ((roundId === 3 || roundId === 4) && window.scorecardTypeState[roundId].team) {
+            let singlesHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Singles Matchplay)</h4>`;
+            const singlesView = roundId === 3 ? 'singles_results_round3' : 'singles_results_round4';
+            try {
+                const { data: singlesData, error: singlesError } = await supabase
+                    .from(singlesView)
+                    .select('*');
+                if (singlesError) throw singlesError;
+                if (!singlesData || singlesData.length === 0) {
+                    singlesHtml += `<div class="text-gray-500 italic">No singles matchplay data available for this round.</div></div>`;
+                    container.innerHTML += singlesHtml;
+                    return;
+                }
+                // Group by match_number
+                const matches = {};
+                singlesData.forEach(row => {
+                    if (!matches[row.match_number]) matches[row.match_number] = [];
+                    matches[row.match_number].push(row);
+                });
+
+                Object.keys(matches).forEach(matchNum => {
+                    const match = matches[matchNum];
+                    const firstRow = match[0];
+                    // Get player names
+                    const player1 = window.allPlayers.find(p => p.player_id == firstRow.player1_id);
+                    const player2 = window.allPlayers.find(p => p.player_id == firstRow.player2_id);
+                    const player1Name = player1 ? player1.name : `Player ${firstRow.player1_id}`;
+                    const player2Name = player2 ? player2.name : `Player ${firstRow.player2_id}`;
+
+                    // Determine match winner by last running score
+                    let matchWinner = '';
+                    if (match.length > 0) {
+                        const lastRow = match[match.length - 1];
+                        if (lastRow.running > 0) matchWinner = player1Name;
+                        else if (lastRow.running < 0) matchWinner = player2Name;
+                    }
+
+                    // Highlight winner
+                    const p1Highlight = matchWinner === player1Name ? 'text-emerald-600 font-bold' : '';
+                    const p2Highlight = matchWinner === player2Name ? 'text-emerald-600 font-bold' : '';
+
+                    singlesHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                    singlesHtml += `<div class="flex items-center justify-between mb-2">`;
+                    singlesHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${p1Highlight}">${player1Name}</span> vs <span class="${p2Highlight}">${player2Name}</span></h5>`;
+                    if (matchWinner) {
+                        singlesHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                    }
+                    singlesHtml += `</div>`;
+                    // Table
+                    singlesHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                    singlesHtml += `<thead class="bg-gray-50"><tr>`;
+                    singlesHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${player1Name}</th><th class="px-2 py-1">${player2Name}</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
+                    singlesHtml += `</tr></thead><tbody>`;
+                    match.forEach((row, idx) => {
+                        let result = '';
+                        let rowClass = '';
+                        if (row.hole_result === 1) {
+                            result = `${player1Name} wins`;
+                            rowClass = 'bg-emerald-50 font-semibold';
+                        } else if (row.hole_result === -1) {
+                            result = `${player2Name} wins`;
+                            rowClass = 'bg-blue-50 font-semibold';
+                        } else {
+                            result = 'Halved';
+                            rowClass = 'bg-gray-50';
+                        }
+                        let running = '';
+                        if (row.running > 0) running = `${player1Name} +${row.running}`;
+                        else if (row.running < 0) running = `${player2Name} +${-row.running}`;
+                        else running = 'All Square';
+
+                        singlesHtml += `<tr class="${rowClass}"><td class="text-center">${row.hole_id}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                    });
+                    singlesHtml += `</tbody></table></div></div>`;
+                });
+            } catch (err) {
+                singlesHtml += `<div class="text-red-500 italic">Error loading singles matchplay data: ${err.message}</div>`;
+            }
+            singlesHtml += `</div>`;
+            container.innerHTML += singlesHtml;
+        }
     }
     // Initial render
     renderScorecardTables();
@@ -725,80 +807,4 @@ function renderRecentRounds(data) {
             const scoreToPar = score - par;
             if (scoreToPar > 0) {
                 scoreToParDisplay = `+${scoreToPar}`;
-            } else if (scoreToPar < 0) {
-                scoreToParDisplay = `${scoreToPar}`;
-            } else {
-                scoreToParDisplay = 'E';
-            }
-        }
-        
-        const roundCard = document.createElement('div');
-        roundCard.className = 'card p-4 hover:shadow-lg transition-shadow cursor-pointer';
-        roundCard.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div>
-                    <h3 class="font-semibold text-lg">${round.course_name}</h3>
-                    <p class="text-gray-600">${round.player_name}</p>
-                    <p class="text-sm text-gray-500">${new Date(round.round_date).toLocaleDateString()}</p>
-                </div>
-                <div class="text-right">
-                    <div class="text-2xl font-bold">${score}</div>
-                    <div class="text-sm text-gray-600">${scoreToParDisplay}</div>
-                </div>
-            </div>
-        `;
-        recentRoundsContainer.appendChild(roundCard);
-    });
-}
-
-// --- Event Handlers ---
-document.addEventListener('DOMContentLoaded', () => {
-    showView('players');
-    showPlayersSubView('all-players');
-    
-    // Tab navigation
-    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
-    document.getElementById('tab-dashboard').addEventListener('click', () => {
-        showView('dashboard');
-        fetchRecentRounds();
-    });
-    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
-    
-    // Players sub-tab navigation
-    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
-    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
-    
-    // Back button for profile view
-    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
-    
-    // Player click handlers for profile view
-    document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('clickable-player')) {
-            const playerId = e.target.dataset.playerId;
-            showPlayerProfile(playerId);
-        }
-    });
-    
-    // Load initial data
-    fetchPlayers();
-});
-
-// --- Utility Functions ---
-function showError(message, details = '') {
-    loader.classList.add('hidden');
-    errorMessage.classList.remove('hidden');
-    document.getElementById('errorText').textContent = message;
-    document.getElementById('errorDetails').textContent = details;
-}
-
-function showPlayerProfile(playerId) {
-    // Implementation for showing player profile
-    showView('profile');
-    // Add profile rendering logic here
-}
-
-function getInitials(pid) {
-    const p = window.allPlayers.find(pl => pl.player_id == pid);
-    if (!p) return '';
-    return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
-}
+            } else if
