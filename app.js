@@ -697,4 +697,76 @@ function renderRecentRounds(data) {
         let scoreToParDisplay = '';
         if (score !== 'N/A' && par !== 'N/A') {
             const scoreToPar = score - par;
-            if
+            if (scoreToPar > 0) {
+                scoreToParDisplay = `+${scoreToPar}`;
+            } else if (scoreToPar < 0) {
+                scoreToParDisplay = `${scoreToPar}`;
+            } else {
+                scoreToParDisplay = 'E';
+            }
+        }
+        
+        const roundCard = document.createElement('div');
+        roundCard.className = 'card p-4 hover:shadow-lg transition-shadow cursor-pointer';
+        roundCard.innerHTML = `
+            <div class="flex justify-between items-center">
+                <div>
+                    <h3 class="font-semibold text-lg">${round.course_name}</h3>
+                    <p class="text-gray-600">${round.player_name}</p>
+                    <p class="text-sm text-gray-500">${new Date(round.round_date).toLocaleDateString()}</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-2xl font-bold">${score}</div>
+                    <div class="text-sm text-gray-600">${scoreToParDisplay}</div>
+                </div>
+            </div>
+        `;
+        recentRoundsContainer.appendChild(roundCard);
+    });
+}
+
+// --- Event Handlers ---
+document.addEventListener('DOMContentLoaded', () => {
+    showView('players');
+    showPlayersSubView('all-players');
+    
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard');
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+    
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+    
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+    
+    // Player click handlers for profile view
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+    
+    // Load initial data
+    fetchPlayers();
+});
+
+// --- Utility Functions ---
+function showError(message, details = '') {
+    loader.classList.add('hidden');
+    errorMessage.classList.remove('hidden');
+    document.getElementById('errorText').textContent = message;
+    document.getElementById('errorDetails').textContent = details;
+}
+
+function showPlayerProfile(playerId) {
+    // Implementation for showing player profile
+    showView('profile');
+    // Add profile rendering logic here
+}
