@@ -336,12 +336,14 @@ async function renderRoundDetails(roundId) {
     async function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
-        // Debug logging
-        console.log('--- DEBUG: renderScorecardTables ---');
-        console.log('RoundId:', roundId);
-        console.log('Detailed scores:', scores);
-        console.log('All players:', allPlayersData);
-        console.log('Holes:', holes);
+        // Debug logging (always run)
+        if (typeof window !== 'undefined' && window.console) {
+            window.console.log('--- DEBUG: renderScorecardTables ---');
+            window.console.log('RoundId:', roundId);
+            window.console.log('Detailed scores:', scores);
+            window.console.log('All players:', allPlayersData);
+            window.console.log('Holes:', holes);
+        }
         // GROSS
         if (window.scorecardTypeState[roundId].gross) {
             let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
