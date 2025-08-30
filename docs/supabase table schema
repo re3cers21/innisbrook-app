@@ -59,3 +59,11 @@ CREATE TABLE public.Tees (
   CONSTRAINT Tees_pkey PRIMARY KEY (tee_id),
   CONSTRAINT Tees_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.Courses(course_id)
 );
+
+
+create table public.hilo_matchups (
+  round_id integer null,
+  match_number integer null,
+  team text null,
+  player_id integer null
+) TABLESPACE pg_default;

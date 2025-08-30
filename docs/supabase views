@@ -96,3 +96,133 @@ order by
   r.round_date desc
 limit
   10;
+
+
+  create view public.hilo_results_round1 as
+with
+  match_players as (
+    select
+      m.match_number,
+      m.team,
+      m.player_id
+    from
+      hilo_matchups m
+    where
+      m.round_id = 1
+  ),
+  scores as (
+    select
+      s.player_id,
+      s.hole_id,
+      s.net_strokes
+    from
+      detailed_scores s
+    where
+      s.round_id = 1
+  ),
+  match_scores as (
+    select
+      mp.match_number,
+      mp.team,
+      s.hole_id,
+      s.player_id,
+      s.net_strokes
+    from
+      match_players mp
+      join scores s on mp.player_id = s.player_id
+  ),
+  team_hilo as (
+    select
+      match_scores.match_number,
+      match_scores.hole_id,
+      match_scores.team,
+      min(match_scores.net_strokes) as low_net,
+      max(match_scores.net_strokes) as high_net
+    from
+      match_scores
+    group by
+      match_scores.match_number,
+      match_scores.hole_id,
+      match_scores.team
+  ),
+  hole_results as (
+    select
+      t1.match_number,
+      t1.hole_id,
+      t1.team as team1,
+      t2.team as team2,
+      t1.low_net as team1_low,
+      t1.high_net as team1_high,
+      t2.low_net as team2_low,
+      t2.high_net as team2_high,
+      case
+        when t1.low_net < t2.low_net
+        and t1.high_net < t2.high_net then 1::numeric
+        when t1.low_net = t2.low_net
+        and t1.high_net = t2.high_net then 0.5
+        else 0::numeric
+      end as team1_hole_result,
+      case
+        when t2.low_net < t1.low_net
+        and t2.high_net < t1.high_net then 1::numeric
+        when t1.low_net = t2.low_net
+        and t1.high_net = t2.high_net then 0.5
+        else 0::numeric
+      end as team2_hole_result
+    from
+      team_hilo t1
+      join team_hilo t2 on t1.match_number = t2.match_number
+      and t1.hole_id = t2.hole_id
+      and t1.team <> t2.team
+    where
+      t1.team = 'Kinnaird'::text
+  ),
+  running_score as (
+    select
+      hole_results.match_number,
+      hole_results.hole_id,
+      hole_results.team1,
+      hole_results.team2,
+      hole_results.team1_low,
+      hole_results.team1_high,
+      hole_results.team2_low,
+      hole_results.team2_high,
+      hole_results.team1_hole_result,
+      hole_results.team2_hole_result,
+      sum(
+        hole_results.team1_hole_result - hole_results.team2_hole_result
+      ) over (
+        partition by
+          hole_results.match_number
+        order by
+          hole_results.hole_id
+      ) as team1_running,
+      sum(
+        hole_results.team2_hole_result - hole_results.team1_hole_result
+      ) over (
+        partition by
+          hole_results.match_number
+        order by
+          hole_results.hole_id
+      ) as team2_running
+    from
+      hole_results
+  )
+select
+  match_number,
+  hole_id,
+  team1,
+  team2,
+  team1_low,
+  team1_high,
+  team2_low,
+  team2_high,
+  team1_hole_result,
+  team2_hole_result,
+  team1_running,
+  team2_running
+from
+  running_score
+order by
+  match_number,
+  hole_id;
