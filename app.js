@@ -285,11 +285,13 @@ async function renderRoundDetails(roundId) {
     let holesError = null;
     try {
         if (round && round.course_id) {
+            console.log('DEBUG: round.course_id =', round.course_id, 'typeof:', typeof round.course_id);
             const { data: holesData, error } = await supabase
                 .from('Holes')
                 .select('*')
-                .eq('course_id', round.course_id)
+                .eq('course_id', Number(round.course_id))
                 .order('hole_number');
+            console.log('DEBUG: Holes query result:', { course_id: round.course_id, holesData, error });
             holesError = error;
             if (error) {
                 console.error('Supabase Holes error:', error);
@@ -300,6 +302,7 @@ async function renderRoundDetails(roundId) {
         }
     } catch (e) {
         holesError = e;
+        console.error('Supabase Holes exception:', e);
     }
     // For Rounds 1 and 2, do NOT override holes array; always use Holes table for column headers
     if ((roundId === 1 || roundId === 2)) {
