@@ -48,10 +48,6 @@ async function fetchRecentRounds() {
 }
 
 // Fetch all rounds with course and tee info for round selector
-import * as api from './api.js';
-import * as render from './render.js';
-import * as events from './events.js';
-import * as utils from './utils.js';
 
 const SUPABASE_URL = 'https://pytfoklmefbeqdblvxcx.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5dGZva2xtZWZiZXFkYmx2eGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNDM4MzgsImV4cCI6MjA3MDcxOTgzOH0.fZ65egcOvVgbF0Jp_-B_VNn4qW905cpq62oU0lIL0bA';
