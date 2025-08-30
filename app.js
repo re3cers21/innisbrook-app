@@ -281,8 +281,8 @@ async function renderRoundDetails(roundId) {
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
     // Prefer round metadata from cached Rounds table (ensures course_id exists)
     let roundMeta = (window.roundById && window.roundById[roundId]) ? window.roundById[roundId] : null;
-    // Fallback to recent_rounds_view row for date/name display
-    let round = roundPlayers[0] || roundMeta || null;
+    // Fallback to recent_rounds_view row for course/tee display ONLY
+    let round = roundPlayers[0] || null;
     // If still no metadata, bail out quietly
     if (!round && !roundMeta) return;
     
@@ -355,15 +355,16 @@ async function renderRoundDetails(roundId) {
             }));
         }
     }
-    // Fetch all scores for this round for Gross/Net display
+    
+    // Fetch all scores for this round for Gross/Net display - limit to only needed columns
     let scores = [];
     try {
         let scoresData = [];
         let scoresError = null;
-        // Always use detailed_scores for all rounds
+        // Always use detailed_scores for all rounds - but project only needed columns
         const { data: dsData, error: dsError } = await supabase
             .from('detailed_scores')
-            .select('*')
+            .select('player_id,hole_id,net_strokes,gross_strokes') // Only select what we need
             .eq('round_id', roundId);
         scoresData = dsData || [];
         scoresError = dsError;
@@ -372,6 +373,7 @@ async function renderRoundDetails(roundId) {
     } catch (e) {
         scores = [];
     }
+    
     // Scorecard type toggles
     let scorecardTypes = [
         { key: 'gross', label: 'Gross', checked: true },
@@ -385,14 +387,16 @@ async function renderRoundDetails(roundId) {
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
     detailsDiv.className = 'card p-2 overflow-x-auto';
-    // Use the cached round metadata for the correct date
+    
+    // FIX: Always use the cached round metadata for the correct date and course name
     const displayDate = roundMeta && roundMeta.round_date ? 
         new Date(roundMeta.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
-        (round && round.round_date ? 
-            new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
-            'Unknown Date');
+        'Unknown Date';
     
-    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${displayDate}</h3>`;
+    const courseName = roundMeta && roundMeta.Courses ? roundMeta.Courses.course_name : 
+                      (round && round.course_name ? round.course_name : 'Unknown Course');
+    
+    let html = `<h3 class="text-xl font-bold mb-4">${courseName} - ${displayDate}</h3>`;
     html += `<div class="flex gap-4 mb-4">`;
     scorecardTypes.forEach(type => {
         const checked = window.scorecardTypeState[roundId][type.key] ? 'checked' : '';
@@ -624,26 +628,24 @@ async function renderRoundDetails(roundId) {
                                 // For each team, get player IDs in this match
                                 const t1ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team1).map(m => m.player_id);
                                 const t2ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team2).map(m => m.player_id);
-                                // For each, get net_strokes for this hole from detailed_scores (row.hole_id)
-                                // We don't have net_strokes per player in this row, so we need to look up
-                                // Instead, use hiloMatchups + allPlayers + detailed_scores
-                                // We'll use window.detailedScores if available, else skip
-                                if (window.detailedScores) {
-                                    // Team 1 Low
+
+                                // Use the per-round scores instead of global detailed_scores
+                                if (scores && scores.length) {
+                                    // Team 1 Low/High
                                     let t1Low = null, t1High = null;
                                     t1ids.forEach(pid => {
-                                        const score = window.detailedScores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
-                                        if (!score) return;
-                                        if (score.net_strokes == row.team1_low) t1Low = pid;
-                                        if (score.net_strokes == row.team1_high) t1High = pid;
+                                        const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
+                                        if (!sc) return;
+                                        if (sc.net_strokes == row.team1_low) t1Low = pid;
+                                        if (sc.net_strokes == row.team1_high) t1High = pid;
                                     });
                                     // Team 2 Low/High
                                     let t2Low = null, t2High = null;
                                     t2ids.forEach(pid => {
-                                        const score = window.detailedScores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
-                                        if (!score) return;
-                                        if (score.net_strokes == row.team2_low) t2Low = pid;
-                                        if (score.net_strokes == row.team2_high) t2High = pid;
+                                        const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
+                                        if (!sc) return;
+                                        if (sc.net_strokes == row.team2_low) t2Low = pid;
+                                        if (sc.net_strokes == row.team2_high) t2High = pid;
                                     });
                                     // Get initials
                                     const getInitials = pid => {
@@ -695,160 +697,4 @@ function renderRecentRounds(data) {
         let scoreToParDisplay = '';
         if (score !== 'N/A' && par !== 'N/A') {
             const scoreToPar = score - par;
-            if (scoreToPar > 0) scoreToParDisplay = `+${scoreToPar}`;
-            else if (scoreToPar === 0) scoreToParDisplay = 'E';
-            else scoreToParDisplay = `${scoreToPar}`;
-        }
-        const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const item = document.createElement('div');
-        item.className = 'card p-4 flex items-center justify-between';
-        item.innerHTML = `<div class="flex items-center space-x-4"><div class="flex-shrink-0"><div class="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center"><span class="text-xl font-bold text-emerald-700">${score}</span></div></div><div><p class="font-bold text-gray-800 clickable-player" data-player-id="${round.player_id}">${round.player_name}</p><p class="text-sm text-gray-500">${round.course_name} (${round.tee_name})</p></div></div><div class="text-right"><p class="text-lg font-semibold text-gray-700">${scoreToParDisplay}</p><p class="text-sm text-gray-500">${date}</p></div>`;
-        recentRoundsContainer.appendChild(item);
-    });
-}
-
-function renderProfile(player, rounds) {
-    const profileHeader = document.getElementById('profileHeader');
-    const profileRoundsContainer = document.getElementById('profileRoundsContainer');
-    profileHeader.innerHTML = `<div class="card p-6"><h2 class="text-3xl font-bold text-gray-900">${player.name}</h2><p class="mt-1 text-lg text-emerald-600 font-semibold">Handicap Index: ${player.handicap_index}</p></div>`;
-    // Fetch and show course handicaps for this player
-    fetchPlayerCourseHandicaps(player.player_id).then(handicaps => {
-        if (handicaps && handicaps.length > 0) {
-            profileHeader.innerHTML += `
-                <div class="mt-4">
-                    <h3 class="text-lg font-semibold mb-1">Course Handicaps</h3>
-                    <ul class="text-sm">
-                        ${handicaps.map(h => `<li>${h.course_name} (${h.tee_name}): <strong>${h.course_handicap}</strong></li>`).join('')}
-                    </ul>
-                </div>
-            `;
-        }
-    });
-    profileRoundsContainer.innerHTML = '';
-    if (rounds.length === 0) {
-        profileRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No round history found for this player.</div>`;
-        return;
-    }
-    rounds.forEach(round => {
-        const score = round.total_score || 'N/A';
-        const par = round.total_par || 'N/A';
-        let scoreToParDisplay = '';
-        if (score !== 'N/A' && par !== 'N/A') {
-            const scoreToPar = score - par;
-            if (scoreToPar > 0) scoreToParDisplay = `+${scoreToPar}`;
-            else if (scoreToPar === 0) scoreToParDisplay = 'E';
-            else scoreToParDisplay = `${scoreToPar}`;
-        }
-        const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const item = document.createElement('div');
-        item.className = 'card p-4 flex items-center justify-between';
-        item.innerHTML = `<div class="flex items-center space-x-4"><div class="flex-shrink-0"><div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center"><span class="text-xl font-bold text-gray-700">${score}</span></div></div><div><p class="font-semibold text-gray-800">${round.course_name}</p><p class="text-sm text-gray-500">${round.tee_name}</p></div></div><div class="text-right"><p class="text-lg font-semibold text-gray-700">${scoreToParDisplay}</p><p class="text-sm text-gray-500">${date}</p></div>`;
-        profileRoundsContainer.appendChild(item);
-    });
-// Fetch course handicaps for a player
-async function fetchPlayerCourseHandicaps(playerId) {
-    const { data, error } = await supabase
-        .from('course_handicap_view')
-        .select('*')
-        .eq('player_id', playerId);
-    if (error) {
-        showError('Failed to load course handicaps', error.message);
-        return [];
-    }
-    return data;
-}
-
-// Fetch net leaderboard from view
-async function fetchNetLeaderboard() {
-    const { data, error } = await supabase
-        .from('player_round_net_scores')
-        .select('*')
-        .order('total_net_score', { ascending: true });
-    if (error) {
-        showError('Failed to load net leaderboard', error.message);
-        return [];
-    }
-    return data;
-}
-
-// Render net leaderboard
-async function renderNetLeaderboard() {
-    const leaderboard = await fetchNetLeaderboard();
-    const container = document.getElementById('leaderboard-net');
-    if (!container) return;
-    container.innerHTML = `
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead><tr>
-            <th class="px-4 py-2">Player</th><th class="px-4 py-2">Round Date</th><th class="px-4 py-2">Course</th><th class="px-4 py-2">Net Score</th>
-          </tr></thead>
-          <tbody>
-            ${leaderboard.map(row => `
-              <tr>
-                <td class="font-semibold">${row.player_name}</td>
-                <td>${new Date(row.round_date).toLocaleDateString('en-US')}</td>
-                <td>${row.course_name}</td>
-                <td class="text-center font-bold">${row.total_net_score}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-    `;
-}
-
-// Call renderNetLeaderboard when leaderboard net tab is shown
-document.addEventListener('DOMContentLoaded', () => {
-    const netTab = document.getElementById('leaderboard-tab-net');
-    if (netTab) {
-        netTab.addEventListener('click', renderNetLeaderboard);
-    }
-    // Optionally, render on load if net tab is default
-    if (document.getElementById('leaderboard-net') && netTab && netTab.classList.contains('active')) {
-        renderNetLeaderboard();
-    }
-});
-}
-
-function showError(message, details) {
-    const errorDetails = document.getElementById('errorDetails');
-    loader.style.display = 'none';
-    document.querySelectorAll('#appContainer > div').forEach(el => el.classList.add('hidden'));
-    errorMessage.classList.remove('hidden');
-    document.getElementById('errorText').textContent = message;
-    errorDetails.textContent = `Details: ${details}`;
-}
-
-// Removed: filterHandicaps, as handicaps section is gone
-
-// --- Main Execution & Event Listeners ---
-async function initializeApp() {
-    loader.classList.remove('hidden');
-    try {
-        await Promise.all([fetchPlayers(), fetchRecentRounds()]);
-        loader.classList.add('hidden');
-        showView('players');
-        showPlayersSubView('all-players');
-    } catch (error) {
-        showError('Failed to load initial data.', error.message);
-    }
-}
-
-document.getElementById('tab-players').addEventListener('click', () => showView('players'));
-document.getElementById('tab-dashboard').addEventListener('click', () => showView('dashboard'));
-document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
-document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
-document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
-backButton.addEventListener('click', () => showView(lastActiveTab));
-// Removed: searchInput event listener, as handicaps section is gone
-document.getElementById('appContainer').addEventListener('click', (e) => {
-    if (e.target.classList.contains('clickable-player')) {
-        const playerId = e.target.dataset.playerId;
-        if (playerId) {
-            showView('profile');
-            loadPlayerProfile(playerId);
-        }
-    }
-});
-
-if (supabase) {
-    initializeApp();
-}
+            if
