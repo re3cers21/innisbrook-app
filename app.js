@@ -197,9 +197,15 @@ function updateActiveTab(activeTabId) {
 // --- Data Fetching ---
 async function fetchPlayers() {
     const { data, error } = await supabase.from('Players').select('*').order('name');
-    if (error) throw error;
+    if (error) {
+        console.error('Supabase fetchPlayers error:', error);
+        showError('Failed to fetch players.', error.message);
+    } else {
+        console.log('Supabase fetchPlayers data:', data);
+    }
     allPlayersData = data;
     window.allPlayers = data; // Make available globally for Team Game
+    window.allPlayersData = allPlayersData; // For debugging
     renderPlayers(allPlayersData);
     renderTeams(allPlayersData);
     // Also fetch hilo_matchups for Team Game player display
