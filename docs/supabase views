@@ -226,3 +226,67 @@ from
 order by
   match_number,
   hole_id;
+
+
+  create view public.singles_results_round3 as
+with
+  matchups as (
+    select * from singles_matchups where round_id = 3
+  ),
+  scores as (
+    select s.player_id, s.hole_id, s.net_strokes
+    from detailed_scores s
+    where s.round_id = 3
+  ),
+  match_scores as (
+    select
+      m.match_number,
+      m.player1_id,
+      m.player2_id,
+      m.team1,
+      m.team2,
+      s1.hole_id,
+      s1.net_strokes as player1_net,
+      s2.net_strokes as player2_net
+    from matchups m
+    join scores s1 on m.player1_id = s1.player_id
+    join scores s2 on m.player2_id = s2.player_id and s1.hole_id = s2.hole_id
+  ),
+  hole_results as (
+    select
+      match_number,
+      hole_id,
+      player1_id,
+      player2_id,
+      team1,
+      team2,
+      player1_net,
+      player2_net,
+      case
+        when player1_net < player2_net then 1
+        when player2_net < player1_net then -1
+        else 0
+      end as hole_result
+    from match_scores
+  ),
+  running_score as (
+    select *,
+      sum(hole_result) over (partition by match_number order by hole_id) as running
+    from hole_results
+  )
+select * from running_score
+order by match_number, hole_id;
+
+
+-- Create a view for Round 5 team net totals
+create or replace view team_net_totals_round5 as
+select
+  p.team,
+  sum(ds.net_strokes) as team_net_total
+from
+  detailed_scores ds
+  join Players p on ds.player_id = p.player_id
+where
+  ds.round_id = 5
+group by
+  p.team;

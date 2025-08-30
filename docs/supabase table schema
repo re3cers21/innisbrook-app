@@ -67,3 +67,12 @@ create table public.hilo_matchups (
   team text null,
   player_id integer null
 ) TABLESPACE pg_default;
+
+create table public.singles_matchups (
+  round_id integer not null,
+  match_number integer not null,
+  player1_id integer not null,
+  player2_id integer not null,
+  team1 text not null,
+  team2 text not null
+);
