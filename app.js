@@ -1,3 +1,14 @@
+async function fetchAllRounds() {
+    const { data, error } = await supabase
+        .from('Rounds')
+        .select(`round_id, round_date, round_number, tee_id, Tees (tee_name, tee_rating, tee_slope), course_id, Courses (course_name, total_par)`)
+        .order('round_date', { ascending: true });
+    if (error) {
+        showError('Failed to load rounds', error.message);
+        return [];
+    }
+    return data;
+}
 // --- Function Declarations ---
 async function fetchRecentRounds() {
     try {
