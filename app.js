@@ -573,6 +573,16 @@ async function renderRoundDetails(roundId) {
                         // Find team names
                         const team1 = match[0].team1;
                         const team2 = match[0].team2;
+
+                        // Determine match winner by last running score (move this up!)
+                        let matchWinner = '';
+                        if (match.length > 0) {
+                            const lastRow = match[match.length - 1];
+                            if (lastRow.team1_running > lastRow.team2_running) matchWinner = lastRow.team1;
+                            else if (lastRow.team2_running > lastRow.team1_running) matchWinner = lastRow.team2;
+                        }
+
+                        // Now build player lists for each team in this match, using matchWinner for highlighting
                         let team1Players = '', team2Players = '';
                         if (window.allPlayers && Array.isArray(window.allPlayers) && window.hiloMatchups && Array.isArray(window.hiloMatchups)) {
                             const t1ids = window.hiloMatchups
@@ -594,14 +604,6 @@ async function renderRoundDetails(roundId) {
                                 const p = window.allPlayers.find(pl => pl.player_id == pid);
                                 return p ? `<span class="${t2Highlight}">${p.name}</span>` : '';
                             }).filter(Boolean).join(', ');
-                        }
-
-                        // Determine match winner by last running score
-                        let matchWinner = '';
-                        if (match.length > 0) {
-                            const lastRow = match[match.length - 1];
-                            if (lastRow.team1_running > lastRow.team2_running) matchWinner = lastRow.team1;
-                            else if (lastRow.team2_running > lastRow.team1_running) matchWinner = lastRow.team2;
                         }
 
                         teamHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
