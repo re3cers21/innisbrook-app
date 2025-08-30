@@ -322,11 +322,12 @@ async function renderRoundDetails(roundId) {
     });
 
     // Render scorecard tables based on toggles
-    function renderScorecardTables() {
+    async function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
         // GROSS
         if (window.scorecardTypeState[roundId].gross) {
+            // ...existing code for gross...
             let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
             grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
             grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
@@ -350,21 +351,14 @@ async function renderRoundDetails(roundId) {
                     let cellClass = '', cellContent = score;
                     if (score !== null && score !== undefined && score !== '') {
                         const rel = Number(score) - Number(hole.hole_par);
-                        // Eagle or better: red circle + gold number
                         if (rel <= -2) {
                             cellClass = 'golf-eagle';
                             cellContent = `<span class="golf-eagle-number">${score}</span>`;
-                        }
-                        // Birdie: red circle
-                        else if (rel === -1) {
+                        } else if (rel === -1) {
                             cellClass = 'golf-birdie';
-                        }
-                        // Bogey: black square
-                        else if (rel === 1) {
+                        } else if (rel === 1) {
                             cellClass = 'golf-bogey';
-                        }
-                        // Double bogey or worse: black square
-                        else if (rel >= 2) {
+                        } else if (rel >= 2) {
                             cellClass = 'golf-double-bogey';
                         }
                         total += Number(score);
@@ -381,6 +375,7 @@ async function renderRoundDetails(roundId) {
         }
         // NET
         if (window.scorecardTypeState[roundId].net) {
+            // ...existing code for net...
             let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
             netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
             netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
@@ -404,21 +399,14 @@ async function renderRoundDetails(roundId) {
                     let cellClass = '', cellContent = net;
                     if (net !== null && net !== undefined && net !== '') {
                         const rel = Number(net) - Number(hole.hole_par);
-                        // Eagle or better: red circle + gold number
                         if (rel <= -2) {
                             cellClass = 'golf-eagle';
                             cellContent = `<span class="golf-eagle-number">${net}</span>`;
-                        }
-                        // Birdie: red circle
-                        else if (rel === -1) {
+                        } else if (rel === -1) {
                             cellClass = 'golf-birdie';
-                        }
-                        // Bogey: black square
-                        else if (rel === 1) {
+                        } else if (rel === 1) {
                             cellClass = 'golf-bogey';
-                        }
-                        // Double bogey or worse: black square
-                        else if (rel >= 2) {
+                        } else if (rel >= 2) {
                             cellClass = 'golf-double-bogey';
                         }
                         total += Number(net);
@@ -433,10 +421,55 @@ async function renderRoundDetails(roundId) {
             netHtml += `</tbody></table></div>`;
             container.innerHTML += netHtml;
         }
-        // TEAM GAME (blank)
+        // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-            teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div></div>`;
+            // Only show for rounds 1 and 2
+            if (roundId === 1 || roundId === 2) {
+                // Use hilo_results_round1 or hilo_results_round2
+                const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
+                try {
+                    const { data: hiloData, error: hiloError } = await supabase
+                        .from(hiloView)
+                        .select('*');
+                    if (hiloError) throw hiloError;
+                    if (!hiloData || hiloData.length === 0) {
+                        teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div></div>`;
+                        container.innerHTML += teamHtml;
+                        return;
+                    }
+                    // Group by match_number
+                    const matches = {};
+                    hiloData.forEach(row => {
+                        if (!matches[row.match_number]) matches[row.match_number] = [];
+                        matches[row.match_number].push(row);
+                    });
+                    Object.keys(matches).forEach(matchNum => {
+                        const match = matches[matchNum];
+                        teamHtml += `<div class="mb-4"><h5 class="font-semibold mb-1">Match ${matchNum}: ${match[0].team1} vs ${match[0].team2}</h5>`;
+                        teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+                        teamHtml += `<th>Hole</th><th>${match[0].team1} Low</th><th>${match[0].team1} High</th><th>${match[0].team2} Low</th><th>${match[0].team2} High</th><th>Result</th><th>Running</th>`;
+                        teamHtml += `</tr></thead><tbody>`;
+                        match.forEach(row => {
+                            let result = '';
+                            if (row.team1_hole_result === 1) result = `${row.team1} wins`;
+                            else if (row.team2_hole_result === 1) result = `${row.team2} wins`;
+                            else result = 'Halved';
+                            let running = '';
+                            if (row.team1_running > 0) running = `${row.team1} +${row.team1_running}`;
+                            else if (row.team1_running < 0) running = `${row.team2} +${-row.team1_running}`;
+                            else running = 'All Square';
+                            teamHtml += `<tr><td>${row.hole_id}</td><td>${row.team1_low}</td><td>${row.team1_high}</td><td>${row.team2_low}</td><td>${row.team2_high}</td><td>${result}</td><td>${running}</td></tr>`;
+                        });
+                        teamHtml += `</tbody></table></div>`;
+                    });
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
+                }
+            } else {
+                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
+            }
+            teamHtml += `</div>`;
             container.innerHTML += teamHtml;
         }
     }
