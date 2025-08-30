@@ -231,6 +231,17 @@ function renderRoundSelector(rounds) {
             recentRoundsContainer.innerHTML = '<div class="card p-5 text-center text-gray-500">No rounds found.</div>';
             return;
         }
+        // Cache rounds by id for later lookups (course_id, course/tee names, etc.)
+        try {
+            window.allRoundsCache = allRounds;
+            window.roundById = allRounds.reduce((acc, r) => {
+                acc[r.round_id] = r;
+                return acc;
+            }, {});
+            console.log('DEBUG: Cached rounds metadata:', window.roundById);
+        } catch (e) {
+            console.warn('DEBUG: Failed to cache allRounds', e);
+        }
         const selectorDiv = document.createElement('div');
         selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
         allRounds.forEach(round => {
@@ -266,32 +277,26 @@ async function renderRoundDetails(roundId) {
 
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
-    // Find round info from static list if not present
-    let round = roundPlayers[0];
-    if (!round) {
-        // fallback: use static info
-        const staticRounds = [
-            { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
-            { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
-            { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
-            { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
-            { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
-        ];
-        round = staticRounds.find(r => r.round_id === roundId);
-    }
-    if (!round) return;
+    // Prefer round metadata from cached Rounds table (ensures course_id exists)
+    let roundMeta = (window.roundById && window.roundById[roundId]) ? window.roundById[roundId] : null;
+    // Fallback to recent_rounds_view row for date/name display
+    let round = roundPlayers[0] || roundMeta || null;
+    // If still no metadata, bail out quietly
+    if (!round && !roundMeta) return;
+    const courseId = roundMeta && roundMeta.course_id ? Number(roundMeta.course_id) : (round && round.course_id ? Number(round.course_id) : null);
+    console.log('DEBUG: renderRoundDetails meta', { roundId, courseId, roundMeta, roundFromView: roundPlayers[0] });
     // Fetch holes for this course
     let holes = [];
     let holesError = null;
     try {
-        if (round && round.course_id) {
+        if (courseId) {
             console.log('DEBUG: round.course_id =', round.course_id, 'typeof:', typeof round.course_id);
             const { data: holesData, error } = await supabase
                 .from('Holes')
                 .select('*')
-                .eq('course_id', Number(round.course_id))
+                .eq('course_id', Number(courseId))
                 .order('hole_number');
-            console.log('DEBUG: Holes query result:', { course_id: round.course_id, holesData, error });
+            console.log('DEBUG: Holes query result:', { course_id: courseId, holesData, error });
             holesError = error;
             if (error) {
                 console.error('Supabase Holes error:', error);
