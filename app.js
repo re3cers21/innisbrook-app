@@ -285,27 +285,30 @@ async function renderRoundDetails(roundId) {
             hole_id: i + 1
         }));
     }
-    // Fetch all scores for this round from detailed_scores view
+    // Fetch all scores for this round for Gross/Net display
     let scores = [];
     try {
         let scoresData = [];
         let scoresError = null;
-        // For Rounds 1 and 2, always use Scores table (not detailed_scores)
         if (roundId === 1 || roundId === 2) {
+            // Join Scores with Holes and Players for display
             const { data: fallbackScores, error: fallbackError } = await supabase
                 .from('Scores')
-                .select('*')
+                .select('score_id, round_id, player_id, hole_id, gross_strokes, net_strokes, Players(name), Holes(hole_number, hole_par, hole_handicap)')
                 .eq('round_id', roundId);
             if (!fallbackError && fallbackScores && fallbackScores.length > 0) {
-                // Map fallbackScores to detailed_scores shape
+                // Map fallbackScores to detailed_scores shape with player and hole info
                 scoresData = fallbackScores.map(s => ({
                     score_id: s.score_id,
                     round_id: s.round_id,
                     player_id: s.player_id,
                     hole_id: s.hole_id,
                     gross_strokes: s.gross_strokes,
-                    // If net_strokes is null, fallback to gross_strokes
-                    net_strokes: s.net_strokes !== null && s.net_strokes !== undefined ? s.net_strokes : s.gross_strokes
+                    net_strokes: s.net_strokes !== null && s.net_strokes !== undefined ? s.net_strokes : s.gross_strokes,
+                    player_name: s.Players ? s.Players.name : '',
+                    hole_number: s.Holes ? s.Holes.hole_number : null,
+                    hole_par: s.Holes ? s.Holes.hole_par : null,
+                    hole_handicap: s.Holes ? s.Holes.hole_handicap : null
                 }));
             } else {
                 scoresData = [];
