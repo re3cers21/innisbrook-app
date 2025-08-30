@@ -1,0 +1,98 @@
+create view public.detailed_scores as
+with
+  course_handicaps as (
+    select distinct
+      s_1.round_id,
+      s_1.player_id,
+      round(
+        p.handicap_index * (t.tee_slope::numeric / 113::numeric)::double precision + (t.tee_rating - t.tee_par::numeric)::double precision
+      ) as course_handicap
+    from
+      "Scores" s_1
+      join "Players" p on s_1.player_id = p.player_id
+      join "Rounds" r on s_1.round_id = r.round_id
+      join "Tees" t on r.tee_id = t.tee_id
+  )
+select
+  s.score_id,
+  s.round_id,
+  s.player_id,
+  s.hole_id,
+  s.gross_strokes,
+  s.gross_strokes::double precision - (
+    floor(ch.course_handicap / 18::double precision) + case
+      when h.hole_handicap <= (ch.course_handicap::integer % 18) then 1
+      else 0
+    end::double precision
+  ) as net_strokes
+from
+  "Scores" s
+  join course_handicaps ch on s.round_id = ch.round_id
+  and s.player_id = ch.player_id
+  join "Holes" h on s.hole_id = h.hole_id;
+
+
+create view public.player_round_net_scores as
+select
+  p.player_id,
+  p.name as player_name,
+  r.round_id,
+  r.round_date,
+  c.course_name,
+  sum(s.net_strokes) as total_net_score
+from
+  "Scores" s
+  join "Players" p on s.player_id = p.player_id
+  join "Rounds" r on s.round_id = r.round_id
+  join "Courses" c on r.course_id = c.course_id
+group by
+  p.player_id,
+  r.round_id,
+  c.course_name
+order by
+  r.round_date desc,
+  (sum(s.net_strokes));
+
+  create view public.course_handicap_view as
+select
+  p.player_id,
+  p.name as player_name,
+  t.tee_id,
+  t.tee_name,
+  c.course_id,
+  c.course_name,
+  round(
+    p.handicap_index * (t.tee_slope::numeric / 113::numeric)::double precision + (t.tee_rating - t.tee_par::numeric)::double precision
+  ) as course_handicap
+from
+  "Players" p
+  cross join "Tees" t
+  join "Courses" c on t.course_id = c.course_id;
+
+
+  create view public.recent_rounds_view as
+select
+  r.round_id,
+  r.round_date,
+  p.player_id,
+  p.name as player_name,
+  c.course_id,
+  c.course_name,
+  t.tee_name,
+  sum(s.gross_strokes) as total_score,
+  c.total_par
+from
+  "Rounds" r
+  join "Scores" s on r.round_id = s.round_id
+  join "Players" p on s.player_id = p.player_id
+  join "Courses" c on r.course_id = c.course_id
+  join "Tees" t on r.tee_id = t.tee_id
+group by
+  r.round_id,
+  p.player_id,
+  c.course_id,
+  t.tee_id
+order by
+  r.round_date desc
+limit
+  10;

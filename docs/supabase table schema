@@ -1,0 +1,61 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.Courses (
+  course_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  total_par bigint NOT NULL,
+  course_name text NOT NULL,
+  CONSTRAINT Courses_pkey PRIMARY KEY (course_id)
+);
+CREATE TABLE public.Holes (
+  hole_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  hole_number bigint NOT NULL,
+  hole_par bigint NOT NULL,
+  hole_handicap bigint NOT NULL,
+  course_id bigint NOT NULL,
+  CONSTRAINT Holes_pkey PRIMARY KEY (hole_id),
+  CONSTRAINT Holes_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.Courses(course_id)
+);
+CREATE TABLE public.Players (
+  draft_pick bigint,
+  is_captain boolean,
+  player_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  name text NOT NULL,
+  handicap_index real NOT NULL,
+  team text NOT NULL,
+  CONSTRAINT Players_pkey PRIMARY KEY (player_id)
+);
+CREATE TABLE public.Rounds (
+  course_id bigint NOT NULL,
+  tee_id bigint NOT NULL,
+  round_number integer NOT NULL,
+  round_date date,
+  round_id bigint NOT NULL DEFAULT nextval('rounds_round_id_seq'::regclass),
+  CONSTRAINT Rounds_pkey PRIMARY KEY (round_id),
+  CONSTRAINT rounds_tee_id_fkey FOREIGN KEY (tee_id) REFERENCES public.Tees(tee_id),
+  CONSTRAINT rounds_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.Courses(course_id)
+);
+CREATE TABLE public.Scores (
+  round_id bigint NOT NULL,
+  player_id bigint NOT NULL,
+  hole_id bigint NOT NULL,
+  gross_strokes integer NOT NULL,
+  net_strokes integer,
+  hole_result text,
+  score_id bigint NOT NULL DEFAULT nextval('scores_score_id_seq1'::regclass),
+  CONSTRAINT Scores_pkey PRIMARY KEY (score_id),
+  CONSTRAINT scores_hole_id_fkey1 FOREIGN KEY (hole_id) REFERENCES public.Holes(hole_id),
+  CONSTRAINT scores_player_id_fkey1 FOREIGN KEY (player_id) REFERENCES public.Players(player_id),
+  CONSTRAINT scores_round_id_fkey1 FOREIGN KEY (round_id) REFERENCES public.Rounds(round_id)
+);
+CREATE TABLE public.Tees (
+  course_id bigint NOT NULL,
+  tee_name text NOT NULL,
+  tee_par bigint NOT NULL,
+  tee_yardage bigint NOT NULL,
+  tee_id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  tee_rating numeric NOT NULL,
+  tee_slope bigint NOT NULL,
+  CONSTRAINT Tees_pkey PRIMARY KEY (tee_id),
+  CONSTRAINT Tees_course_id_fkey FOREIGN KEY (course_id) REFERENCES public.Courses(course_id)
+);
