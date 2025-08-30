@@ -285,25 +285,7 @@ async function renderRoundDetails(roundId) {
             hole_id: i + 1
         }));
     }
-    // For Rounds 1 and 2, ensure holes array matches the hole_ids in detailed_scores
-    if ((roundId === 1 || roundId === 2) && scores.length > 0) {
-        // Get unique hole_ids from scores, sorted by hole_number if possible
-        const uniqueHoles = {};
-        scores.forEach(s => {
-            if (!uniqueHoles[s.hole_id]) {
-                uniqueHoles[s.hole_id] = s;
-            }
-        });
-        // If Holes table is missing or mismatched, build holes array from scores
-        holes = Object.values(uniqueHoles)
-            .sort((a, b) => (a.hole_id - b.hole_id))
-            .map(s => ({
-                hole_id: s.hole_id,
-                hole_number: s.hole_number || (s.hole_id - Math.min(...Object.keys(uniqueHoles).map(Number)) + 1),
-                hole_par: s.hole_par || 4,
-                hole_handicap: s.hole_handicap || (s.hole_number || (s.hole_id - Math.min(...Object.keys(uniqueHoles).map(Number)) + 1))
-            }));
-    }
+    // For Rounds 1 and 2, do NOT override holes array; always use Holes table for column headers
     // Fetch all scores for this round for Gross/Net display
     let scores = [];
     try {
