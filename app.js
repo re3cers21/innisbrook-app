@@ -638,8 +638,12 @@ async function renderRoundDetails(roundId) {
                             let t1LowInitials = '', t1HighInitials = '', t2LowInitials = '', t2HighInitials = '';
                             if (window.hiloMatchups && window.allPlayers) {
                                 // For each team, get player IDs in this match
-                                const t1ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team1).map(m => m.player_id);
-                                const t2ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team2).map(m => m.player_id);
+                                const t1ids = window.hiloMatchups
+                                    .filter(m => m.round_id == roundId && m.match_number == matchNum && m.team === row.team1)
+                                    .map(m => m.player_id);
+                                const t2ids = window.hiloMatchups
+                                    .filter(m => m.round_id == roundId && m.match_number == matchNum && m.team === row.team2)
+                                    .map(m => m.player_id);
 
                                 // Use the per-round scores instead of global detailed_scores
                                 if (scores && scores.length) {
@@ -648,16 +652,16 @@ async function renderRoundDetails(roundId) {
                                     t1ids.forEach(pid => {
                                         const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
                                         if (!sc) return;
-                                        if (sc.net_strokes == row.team1_low) t1Low = pid;
-                                        if (sc.net_strokes == row.team1_high) t1High = pid;
+                                        if (sc.net_strokes == row.team1_low && t1Low === null) t1Low = pid;
+                                        if (sc.net_strokes == row.team1_high && t1High === null) t1High = pid;
                                     });
                                     // Team 2 Low/High
                                     let t2Low = null, t2High = null;
                                     t2ids.forEach(pid => {
                                         const sc = scores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
                                         if (!sc) return;
-                                        if (sc.net_strokes == row.team2_low) t2Low = pid;
-                                        if (sc.net_strokes == row.team2_high) t2High = pid;
+                                        if (sc.net_strokes == row.team2_low && t2Low === null) t2Low = pid;
+                                        if (sc.net_strokes == row.team2_high && t2High === null) t2High = pid;
                                     });
                                     // Get initials
                                     const getInitials = pid => {
