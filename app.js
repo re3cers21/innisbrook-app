@@ -450,7 +450,7 @@ async function renderRoundDetails(roundId) {
                         teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
                         teamHtml += `<th>Hole</th><th>${match[0].team1} Low</th><th>${match[0].team1} High</th><th>${match[0].team2} Low</th><th>${match[0].team2} High</th><th>Result</th><th>Running</th>`;
                         teamHtml += `</tr></thead><tbody>`;
-                        match.forEach(row => {
+                        match.forEach((row, idx) => {
                             let result = '';
                             if (row.team1_hole_result === 1) result = `${row.team1} wins`;
                             else if (row.team2_hole_result === 1) result = `${row.team2} wins`;
@@ -459,7 +459,7 @@ async function renderRoundDetails(roundId) {
                             if (row.team1_running > 0) running = `${row.team1} +${row.team1_running}`;
                             else if (row.team1_running < 0) running = `${row.team2} +${-row.team1_running}`;
                             else running = 'All Square';
-                            teamHtml += `<tr><td>${row.hole_id}</td><td>${row.team1_low}</td><td>${row.team1_high}</td><td>${row.team2_low}</td><td>${row.team2_high}</td><td>${result}</td><td>${running}</td></tr>`;
+                            teamHtml += `<tr><td>${idx + 1}</td><td>${row.team1_low}</td><td>${row.team1_high}</td><td>${row.team2_low}</td><td>${row.team2_high}</td><td>${result}</td><td>${running}</td></tr>`;
                         });
                         teamHtml += `</tbody></table></div>`;
                     });
