@@ -197,8 +197,14 @@ async function fetchPlayers() {
     const { data, error } = await supabase.from('Players').select('*').order('name');
     if (error) throw error;
     allPlayersData = data;
+    window.allPlayers = data; // Make available globally for Team Game
     renderPlayers(allPlayersData);
     renderTeams(allPlayersData);
+    // Also fetch hilo_matchups for Team Game player display
+    const { data: matchups, error: matchupsError } = await supabase.from('hilo_matchups').select('*');
+    if (!matchupsError) {
+        window.hiloMatchups = matchups;
+    }
 }
 
 // Removed: fetchHandicaps, as handicaps section is gone
@@ -444,11 +450,29 @@ async function renderRoundDetails(roundId) {
                         if (!matches[row.match_number]) matches[row.match_number] = [];
                         matches[row.match_number].push(row);
                     });
+
+                    // Build player lists for each team in this match
+                    // We'll need to fetch from hilo_matchups and Players
+                    // Assume window.allPlayers is available (from initial load)
+                    // If not, fallback to just showing blank
                     Object.keys(matches).forEach(matchNum => {
                         const match = matches[matchNum];
-                        // Get player names for each team in this match
-                        const team1Players = hiloData.filter(r => r.match_number == matchNum && r.team1 === r.team1).map(r => r.team1_players).filter(Boolean)[0] || '';
-                        const team2Players = hiloData.filter(r => r.match_number == matchNum && r.team2 === r.team2).map(r => r.team2_players).filter(Boolean)[0] || '';
+                        // Find team names
+                        const team1 = match[0].team1;
+                        const team2 = match[0].team2;
+                        let team1Players = '', team2Players = '';
+                        if (window.allPlayers && Array.isArray(window.allPlayers) && window.hiloMatchups && Array.isArray(window.hiloMatchups)) {
+                            const t1ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === team1).map(m => m.player_id);
+                            const t2ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === team2).map(m => m.player_id);
+                            team1Players = t1ids.map(pid => {
+                                const p = window.allPlayers.find(pl => pl.player_id == pid);
+                                return p ? p.name : '';
+                            }).filter(Boolean).join(', ');
+                            team2Players = t2ids.map(pid => {
+                                const p = window.allPlayers.find(pl => pl.player_id == pid);
+                                return p ? p.name : '';
+                            }).filter(Boolean).join(', ');
+                        }
 
                         // Determine match winner by last running score
                         let matchWinner = '';
