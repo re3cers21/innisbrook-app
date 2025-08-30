@@ -249,7 +249,9 @@ function renderRoundSelector(rounds) {
             const tee = round.Tees || {};
             const btn = document.createElement('button');
             btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
-            btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`;
+            // Use the round_date directly from the Rounds table (allRounds query)
+            const correctDate = new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+            btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
                 renderRoundSelector();
@@ -383,8 +385,14 @@ async function renderRoundDetails(roundId) {
     detailsDiv = document.createElement('div');
     detailsDiv.id = 'roundDetailsDiv';
     detailsDiv.className = 'card p-2 overflow-x-auto';
-    const date = new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${date}</h3>`;
+    // Use the cached round metadata for the correct date
+    const displayDate = roundMeta && roundMeta.round_date ? 
+        new Date(roundMeta.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
+        (round && round.round_date ? 
+            new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
+            'Unknown Date');
+    
+    let html = `<h3 class="text-xl font-bold mb-4">${round.course_name} - ${displayDate}</h3>`;
     html += `<div class="flex gap-4 mb-4">`;
     scorecardTypes.forEach(type => {
         const checked = window.scorecardTypeState[roundId][type.key] ? 'checked' : '';
