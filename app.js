@@ -1,64 +1,64 @@
 // --- Function Declarations ---
-    async function renderScorecardTables() {
-        const container = detailsDiv.querySelector('#scorecardTables');
-        container.innerHTML = '';
-        // ...existing code for gross and net...
-        // TEAM GAME (Hi-Lo)
-        if (window.scorecardTypeState[roundId].team) {
-            let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-            if (roundId === 1 || roundId === 2) {
-                const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
-                try {
-                    const { data: hiloData, error: hiloError } = await supabase
-                        .from(hiloView)
-                        .select('*');
-                    if (hiloError) throw hiloError;
-                    if (!hiloData || hiloData.length === 0) {
-                        teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div></div>`;
-                        container.innerHTML += teamHtml;
-                        return;
-                    }
-                    // Group by match_number
-                    const matches = {};
-                    hiloData.forEach(row => {
-                        if (!matches[row.match_number]) matches[row.match_number] = [];
-                        matches[row.match_number].push(row);
-                    });
-                    Object.keys(matches).forEach(matchNum => {
-                        const match = matches[matchNum];
-                        // Sort by hole_id and assign display hole number 1-18
-                        match.sort((a, b) => a.hole_id - b.hole_id);
-                        teamHtml += `<div class="mb-6 p-4 bg-gray-50 rounded-xl shadow"><h5 class="font-semibold mb-3 text-lg">Match ${matchNum}: <span class="text-emerald-700 font-bold">${match[0].team1}</span> vs <span class="text-blue-700 font-bold">${match[0].team2}</span></h5>`;
-                        teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table border rounded-lg overflow-hidden"><thead class="bg-emerald-100"><tr>`;
-                        teamHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${match[0].team1} Low</th><th class="px-2 py-1">${match[0].team1} High</th><th class="px-2 py-1">${match[0].team2} Low</th><th class="px-2 py-1">${match[0].team2} High</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
-                        teamHtml += `</tr></thead><tbody>`;
-                        match.forEach((row, idx) => {
-                            let result = '';
-                            if (row.team1_hole_result === 1) result = `<span class="text-emerald-700 font-semibold">${row.team1} wins</span>`;
-                            else if (row.team2_hole_result === 1) result = `<span class="text-blue-700 font-semibold">${row.team2} wins</span>`;
-                            else result = '<span class="text-gray-500">Halved</span>';
-                            let running = '';
-                            if (row.team1_running > 0) running = `<span class="text-emerald-700 font-bold">${row.team1} +${row.team1_running}</span>`;
-                            else if (row.team1_running < 0) running = `<span class="text-blue-700 font-bold">${row.team2} +${-row.team1_running}</span>`;
-                            else running = '<span class="text-gray-500">All Square</span>';
-                            // Display hole number as 1-18
-                            const displayHole = idx + 1;
-                            teamHtml += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}"><td class="text-center font-bold">${displayHole}</td><td class="text-center">${row.team1_low}</td><td class="text-center">${row.team1_high}</td><td class="text-center">${row.team2_low}</td><td class="text-center">${row.team2_high}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
-                        });
-                        teamHtml += `</tbody></table></div>`;
-                    });
-                } catch (err) {
-                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
-                }
-            } else {
-                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
-            }
-            teamHtml += `</div>`;
-            container.innerHTML += teamHtml;
-        }
+function renderTeams(data) {
+    const createPlayerCard = player => {
+        const captainBadge = player.is_captain ? `<span class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Captain</span>` : '';
+        const draftPick = player.draft_pick ? `<span class="text-sm font-bold text-gray-400 w-6">${player.draft_pick}.</span>` : '<span class="w-6"></span>';
+        return `
+            <div class="card p-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    ${draftPick}
+                    <p class="font-semibold text-gray-800 clickable-player" data-player-id="${player.player_id}">${player.name}</p>
+                    ${captainBadge}
+                </div>
+                <p class="text-sm text-gray-600 font-medium">HCP: ${player.handicap_index}</p>
+            </div>`;
+    };
+    const sortByCaptainAndPick = (a, b) => {
+        if (a.is_captain && !b.is_captain) return -1;
+        if (!a.is_captain && b.is_captain) return 1;
+        return (a.draft_pick || 99) - (b.draft_pick || 99);
+    };
+    const teamHomzaHtml = data.filter(p => p.team === 'Homza').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
+    const teamKinnairdHtml = data.filter(p => p.team === 'Kinnaird').sort(sortByCaptainAndPick).map(createPlayerCard).join('');
+    teamHomzaContainer.innerHTML = teamHomzaHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
+    teamKinnairdContainer.innerHTML = teamKinnairdHtml || `<div class="card p-5 text-center text-gray-500">No players on this team.</div>`;
+}
+
+function renderPlayers(data) {
+    playersTableBody.innerHTML = '';
+    data.forEach(p => {
+        const r = playersTableBody.insertRow();
+        r.className = "hover:bg-gray-50";
+        r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
+    });
+}
+
+async function fetchRecentRounds() {
+    try {
+        // Fetch recent rounds with course and tee info
+        const { data, error } = await supabase
+            .from('recent_rounds_view')
+            .select('*');
+        if (error) throw error;
+        allRecentRounds = data;
+        renderRoundSelector(data);
+    } catch (e) {
+        showError('Failed to fetch recent rounds.', e.message);
     }
-    // Initial render
-    renderScorecardTables();
+}
+
+// Fetch all rounds with course and tee info for round selector
+async function fetchAllRounds() {
+    const { data, error } = await supabase
+        .from('Rounds')
+        .select(`round_id, round_date, round_number, tee_id, Tees (tee_name, tee_rating, tee_slope), course_id, Courses (course_name, total_par)`)
+        .order('round_date', { ascending: true });
+    if (error) {
+        showError('Failed to load rounds', error.message);
+        return [];
+    }
+    return data;
+}
 // ...existing code...
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
 let allRecentRounds = [];
@@ -313,14 +313,120 @@ async function renderRoundDetails(roundId) {
     recentRoundsContainer.appendChild(detailsDiv);
 
     // Handler for toggles
+    detailsDiv.querySelectorAll('.scorecard-type-toggle').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const type = cb.dataset.type;
+            window.scorecardTypeState[roundId][type] = cb.checked;
+            renderScorecardTables();
+        });
+    });
+
+    // Render scorecard tables based on toggles
     async function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
-        // ...existing code for gross and net...
+        // GROSS
+        if (window.scorecardTypeState[roundId].gross) {
+            // ...existing code for gross...
+            let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross</h4>`;
+            grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+            grossHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+            holes.forEach(hole => {
+                grossHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+            });
+            grossHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+            grossHtml += `</tr><tr>`;
+            grossHtml += `<td></td>`;
+            holes.forEach(hole => {
+                grossHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+            });
+            grossHtml += `<td colspan="3"></td>`;
+            grossHtml += `</tr></thead><tbody>`;
+            allPlayersData.forEach(player => {
+                grossHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                let out = 0, in9 = 0, total = 0;
+                holes.forEach((hole, idx) => {
+                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                    const score = scoreObj ? scoreObj.gross_strokes : '';
+                    let cellClass = '', cellContent = score;
+                    if (score !== null && score !== undefined && score !== '') {
+                        const rel = Number(score) - Number(hole.hole_par);
+                        if (rel <= -2) {
+                            cellClass = 'golf-eagle';
+                            cellContent = `<span class="golf-eagle-number">${score}</span>`;
+                        } else if (rel === -1) {
+                            cellClass = 'golf-birdie';
+                        } else if (rel === 1) {
+                            cellClass = 'golf-bogey';
+                        } else if (rel >= 2) {
+                            cellClass = 'golf-double-bogey';
+                        }
+                        total += Number(score);
+                        if (idx < 9) out += Number(score);
+                        else in9 += Number(score);
+                    }
+                    grossHtml += `<td class="text-center ${cellClass}">${cellContent !== undefined && cellContent !== null ? cellContent : ''}</td>`;
+                });
+                grossHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                grossHtml += `</tr>`;
+            });
+            grossHtml += `</tbody></table></div>`;
+            container.innerHTML += grossHtml;
+        }
+        // NET
+        if (window.scorecardTypeState[roundId].net) {
+            // ...existing code for net...
+            let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net</h4>`;
+            netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+            netHtml += `<th class="px-2 py-1 text-left font-bold">Player</th>`;
+            holes.forEach(hole => {
+                netHtml += `<th class="px-2 py-1 text-center font-bold">${hole.hole_number}</th>`;
+            });
+            netHtml += `<th class="px-2 py-1 text-center font-bold">Out</th><th class="px-2 py-1 text-center font-bold">In</th><th class="px-2 py-1 text-center font-bold">Total</th>`;
+            netHtml += `</tr><tr>`;
+            netHtml += `<td></td>`;
+            holes.forEach(hole => {
+                netHtml += `<td class="text-center text-gray-500">Par ${hole.hole_par}<br><span class="text-xs">Hdcp ${hole.hole_handicap}</span></td>`;
+            });
+            netHtml += `<td colspan="3"></td>`;
+            netHtml += `</tr></thead><tbody>`;
+            allPlayersData.forEach(player => {
+                netHtml += `<tr><td class="font-semibold text-gray-900 clickable-player" data-player-id="${player.player_id}">${player.name}</td>`;
+                let out = 0, in9 = 0, total = 0;
+                holes.forEach((hole, idx) => {
+                    const scoreObj = scores.find(s => s.player_id == player.player_id && s.hole_id == hole.hole_id);
+                    const net = scoreObj ? scoreObj.net_strokes : '';
+                    let cellClass = '', cellContent = net;
+                    if (net !== null && net !== undefined && net !== '') {
+                        const rel = Number(net) - Number(hole.hole_par);
+                        if (rel <= -2) {
+                            cellClass = 'golf-eagle';
+                            cellContent = `<span class="golf-eagle-number">${net}</span>`;
+                        } else if (rel === -1) {
+                            cellClass = 'golf-birdie';
+                        } else if (rel === 1) {
+                            cellClass = 'golf-bogey';
+                        } else if (rel >= 2) {
+                            cellClass = 'golf-double-bogey';
+                        }
+                        total += Number(net);
+                        if (idx < 9) out += Number(net);
+                        else in9 += Number(net);
+                    }
+                    netHtml += `<td class="text-center ${cellClass}">${cellContent !== undefined && cellContent !== null ? cellContent : ''}</td>`;
+                });
+                netHtml += `<td class="text-center font-bold">${out || ''}</td><td class="text-center font-bold">${in9 || ''}</td><td class="text-center font-bold">${total || ''}</td>`;
+                netHtml += `</tr>`;
+            });
+            netHtml += `</tbody></table></div>`;
+            container.innerHTML += netHtml;
+        }
         // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
+            // Only show for rounds 1 and 2
             if (roundId === 1 || roundId === 2) {
+                // Use hilo_results_round1 or hilo_results_round2
                 const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
                 try {
                     const { data: hiloData, error: hiloError } = await supabase
@@ -340,24 +446,20 @@ async function renderRoundDetails(roundId) {
                     });
                     Object.keys(matches).forEach(matchNum => {
                         const match = matches[matchNum];
-                        // Sort by hole_id and assign display hole number 1-18
-                        match.sort((a, b) => a.hole_id - b.hole_id);
-                        teamHtml += `<div class="mb-6 p-4 bg-gray-50 rounded-xl shadow"><h5 class="font-semibold mb-3 text-lg">Match ${matchNum}: <span class="text-emerald-700 font-bold">${match[0].team1}</span> vs <span class="text-blue-700 font-bold">${match[0].team2}</span></h5>`;
-                        teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table border rounded-lg overflow-hidden"><thead class="bg-emerald-100"><tr>`;
-                        teamHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${match[0].team1} Low</th><th class="px-2 py-1">${match[0].team1} High</th><th class="px-2 py-1">${match[0].team2} Low</th><th class="px-2 py-1">${match[0].team2} High</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
+                        teamHtml += `<div class="mb-4"><h5 class="font-semibold mb-1">Match ${matchNum}: ${match[0].team1} vs ${match[0].team2}</h5>`;
+                        teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
+                        teamHtml += `<th>Hole</th><th>${match[0].team1} Low</th><th>${match[0].team1} High</th><th>${match[0].team2} Low</th><th>${match[0].team2} High</th><th>Result</th><th>Running</th>`;
                         teamHtml += `</tr></thead><tbody>`;
-                        match.forEach((row, idx) => {
+                        match.forEach(row => {
                             let result = '';
-                            if (row.team1_hole_result === 1) result = `<span class="text-emerald-700 font-semibold">${row.team1} wins</span>`;
-                            else if (row.team2_hole_result === 1) result = `<span class="text-blue-700 font-semibold">${row.team2} wins</span>`;
-                            else result = '<span class="text-gray-500">Halved</span>';
+                            if (row.team1_hole_result === 1) result = `${row.team1} wins`;
+                            else if (row.team2_hole_result === 1) result = `${row.team2} wins`;
+                            else result = 'Halved';
                             let running = '';
-                            if (row.team1_running > 0) running = `<span class="text-emerald-700 font-bold">${row.team1} +${row.team1_running}</span>`;
-                            else if (row.team1_running < 0) running = `<span class="text-blue-700 font-bold">${row.team2} +${-row.team1_running}</span>`;
-                            else running = '<span class="text-gray-500">All Square</span>';
-                            // Display hole number as 1-18
-                            const displayHole = idx + 1;
-                            teamHtml += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}"><td class="text-center font-bold">${displayHole}</td><td class="text-center">${row.team1_low}</td><td class="text-center">${row.team1_high}</td><td class="text-center">${row.team2_low}</td><td class="text-center">${row.team2_high}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                            if (row.team1_running > 0) running = `${row.team1} +${row.team1_running}`;
+                            else if (row.team1_running < 0) running = `${row.team2} +${-row.team1_running}`;
+                            else running = 'All Square';
+                            teamHtml += `<tr><td>${row.hole_id}</td><td>${row.team1_low}</td><td>${row.team1_high}</td><td>${row.team2_low}</td><td>${row.team2_high}</td><td>${result}</td><td>${running}</td></tr>`;
                         });
                         teamHtml += `</tbody></table></div>`;
                     });
