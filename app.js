@@ -446,22 +446,55 @@ async function renderRoundDetails(roundId) {
                     });
                     Object.keys(matches).forEach(matchNum => {
                         const match = matches[matchNum];
-                        teamHtml += `<div class="mb-4"><h5 class="font-semibold mb-1">Match ${matchNum}: ${match[0].team1} vs ${match[0].team2}</h5>`;
-                        teamHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table"><thead><tr>`;
-                        teamHtml += `<th>Hole</th><th>${match[0].team1} Low</th><th>${match[0].team1} High</th><th>${match[0].team2} Low</th><th>${match[0].team2} High</th><th>Result</th><th>Running</th>`;
+                        // Get player names for each team in this match
+                        const team1Players = hiloData.filter(r => r.match_number == matchNum && r.team1 === r.team1).map(r => r.team1_players).filter(Boolean)[0] || '';
+                        const team2Players = hiloData.filter(r => r.match_number == matchNum && r.team2 === r.team2).map(r => r.team2_players).filter(Boolean)[0] || '';
+
+                        // Determine match winner by last running score
+                        let matchWinner = '';
+                        if (match.length > 0) {
+                            const lastRow = match[match.length - 1];
+                            if (lastRow.team1_running > lastRow.team2_running) matchWinner = lastRow.team1;
+                            else if (lastRow.team2_running > lastRow.team1_running) matchWinner = lastRow.team2;
+                        }
+
+                        teamHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                        teamHtml += `<div class="flex items-center justify-between mb-2">`;
+                        teamHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${matchWinner === match[0].team1 ? 'text-emerald-600 font-bold' : ''}">${match[0].team1}</span> vs <span class="${matchWinner === match[0].team2 ? 'text-emerald-600 font-bold' : ''}">${match[0].team2}</span></h5>`;
+                        if (matchWinner) {
+                            teamHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                        }
+                        teamHtml += `</div>`;
+                        // Player names row
+                        teamHtml += `<div class="mb-2 text-sm text-gray-600 flex flex-wrap gap-4">`;
+                        teamHtml += `<span><span class="font-semibold">${match[0].team1}:</span> ${team1Players || '<i>Players not listed</i>'}</span>`;
+                        teamHtml += `<span><span class="font-semibold">${match[0].team2}:</span> ${team2Players || '<i>Players not listed</i>'}</span>`;
+                        teamHtml += `</div>`;
+                        // Table
+                        teamHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                        teamHtml += `<thead class="bg-gray-50"><tr>`;
+                        teamHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${match[0].team1} Low</th><th class="px-2 py-1">${match[0].team1} High</th><th class="px-2 py-1">${match[0].team2} Low</th><th class="px-2 py-1">${match[0].team2} High</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
                         teamHtml += `</tr></thead><tbody>`;
                         match.forEach((row, idx) => {
                             let result = '';
-                            if (row.team1_hole_result === 1) result = `${row.team1} wins`;
-                            else if (row.team2_hole_result === 1) result = `${row.team2} wins`;
-                            else result = 'Halved';
+                            let rowClass = '';
+                            if (row.team1_hole_result === 1) {
+                                result = `${row.team1} wins`;
+                                rowClass = 'bg-emerald-50 font-semibold';
+                            } else if (row.team2_hole_result === 1) {
+                                result = `${row.team2} wins`;
+                                rowClass = 'bg-blue-50 font-semibold';
+                            } else {
+                                result = 'Halved';
+                                rowClass = 'bg-gray-50';
+                            }
                             let running = '';
                             if (row.team1_running > 0) running = `${row.team1} +${row.team1_running}`;
                             else if (row.team1_running < 0) running = `${row.team2} +${-row.team1_running}`;
                             else running = 'All Square';
-                            teamHtml += `<tr><td>${idx + 1}</td><td>${row.team1_low}</td><td>${row.team1_high}</td><td>${row.team2_low}</td><td>${row.team2_high}</td><td>${result}</td><td>${running}</td></tr>`;
+                            teamHtml += `<tr class="${rowClass}"><td class="text-center">${idx + 1}</td><td class="text-center">${row.team1_low}</td><td class="text-center">${row.team1_high}</td><td class="text-center">${row.team2_low}</td><td class="text-center">${row.team2_high}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
                         });
-                        teamHtml += `</tbody></table></div>`;
+                        teamHtml += `</tbody></table></div></div>`;
                     });
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;

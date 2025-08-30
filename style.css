@@ -1,3 +1,68 @@
+/* Team Game Table Enhancements */
+.scoreboard-table th, .scoreboard-table td {
+    padding: 0.5em 0.75em;
+    text-align: center;
+}
+.scoreboard-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    background: #fff;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.08);
+    margin-bottom: 0.5em;
+}
+.scoreboard-table thead th {
+    background: #f3f5f0;
+    font-weight: 600;
+    color: #388e3c;
+    border-bottom: 2px solid #e0e0e0;
+}
+.scoreboard-table tr.bg-emerald-50 {
+    background: #e6f9ed !important;
+}
+.scoreboard-table tr.bg-blue-50 {
+    background: #e3f0ff !important;
+}
+.scoreboard-table tr.bg-gray-50 {
+    background: #f7faf7 !important;
+}
+.scoreboard-table td, .scoreboard-table th {
+    border-right: 1px solid #e0e0e0;
+}
+.scoreboard-table td:last-child, .scoreboard-table th:last-child {
+    border-right: none;
+}
+.scoreboard-table tbody tr:last-child td {
+    border-bottom: none;
+}
+.winner-badge {
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 0.25em 1em;
+    font-size: 0.95em;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.12);
+    margin-left: 1em;
+}
+.team-match-header {
+    font-size: 1.1em;
+    font-weight: 600;
+    margin-bottom: 0.25em;
+}
+.team-match-players {
+    font-size: 0.98em;
+    color: #388e3c;
+    margin-bottom: 0.5em;
+}
+.card.border-emerald-500 {
+    border-color: #43a047 !important;
+    box-shadow: 0 4px 16px 0 rgba(67,160,71,0.12);
+}
+.card.border-gray-200 {
+    border-color: #e0e0e0 !important;
+}
 /* Golf scorecard visual indicators */
 
 /* Golf scorecard visual indicators - improved stacking and sizing */
