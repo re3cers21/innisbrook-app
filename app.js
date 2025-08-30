@@ -248,6 +248,14 @@ async function renderRoundDetails(roundId) {
     // Remove any previous details
     let detailsDiv = document.getElementById('roundDetailsDiv');
     if (detailsDiv) detailsDiv.remove();
+
+    // Ensure allPlayersData is loaded before rendering
+    if (!Array.isArray(allPlayersData) || allPlayersData.length === 0) {
+        // Try again after a short delay
+        setTimeout(() => renderRoundDetails(roundId), 100);
+        return;
+    }
+
     // Get all player results for this round
     const roundPlayers = allRecentRounds.filter(r => r.round_id === roundId);
     // Find round info from static list if not present
