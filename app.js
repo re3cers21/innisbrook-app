@@ -208,6 +208,8 @@ async function fetchPlayers() {
     window.allPlayersData = allPlayersData; // For debugging
     renderPlayers(allPlayersData);
     renderTeams(allPlayersData);
+    // Hide loader after initial data load
+    loader.classList.add('hidden');
     // Also fetch hilo_matchups for Team Game player display
     const { data: matchups, error: matchupsError } = await supabase.from('hilo_matchups').select('*');
     if (!matchupsError) {
