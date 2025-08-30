@@ -250,7 +250,10 @@ function renderRoundSelector(rounds) {
             const btn = document.createElement('button');
             btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
             // Use the round_date directly from the Rounds table (allRounds query)
-            const correctDate = new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+            const correctDate = (() => {
+                const [year, month, day] = round.round_date.split('-');
+                return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
+            })();
             btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
@@ -389,9 +392,12 @@ async function renderRoundDetails(roundId) {
     detailsDiv.className = 'card p-2 overflow-x-auto';
     
     // FIX: Always use the cached round metadata for the correct date and course name
-    const displayDate = roundMeta && roundMeta.round_date ? 
-        new Date(roundMeta.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) :
-        'Unknown Date';
+    const displayDate = roundMeta && roundMeta.round_date
+    ? (() => {
+        const [year, month, day] = roundMeta.round_date.split('-');
+        return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    })()
+    : 'Unknown Date';
     
     const courseName = roundMeta && roundMeta.Courses ? roundMeta.Courses.course_name : 
                       (round && round.course_name ? round.course_name : 'Unknown Course');
