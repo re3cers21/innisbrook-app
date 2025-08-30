@@ -289,7 +289,12 @@ async function renderRoundDetails(roundId) {
                 .select('*')
                 .eq('course_id', round.course_id)
                 .order('hole_number');
-            if (holesError) throw holesError;
+            if (holesError) {
+                console.error('Supabase Holes error:', holesError);
+                showError('Failed to fetch holes.', holesError.message);
+            } else {
+                console.log('Supabase Holes data:', holesData);
+            }
             holes = holesData;
         }
     } catch (e) {
