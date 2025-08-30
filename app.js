@@ -288,13 +288,19 @@ async function renderRoundDetails(roundId) {
     // Fetch all scores for this round from detailed_scores view
     let scores = [];
     try {
+        console.log('DEBUG: Fetching detailed_scores for round_id', roundId);
         const { data: scoresData, error: scoresError } = await supabase
             .from('detailed_scores')
             .select('*')
             .eq('round_id', roundId);
-        if (scoresError) throw scoresError;
+        console.log('DEBUG: detailed_scores result:', scoresData);
+        if (scoresError) {
+            console.error('DEBUG: detailed_scores error:', scoresError);
+            throw scoresError;
+        }
         scores = scoresData;
     } catch (e) {
+        console.error('DEBUG: Exception fetching detailed_scores:', e);
         // If error, just use blank scores
         scores = [];
     }
