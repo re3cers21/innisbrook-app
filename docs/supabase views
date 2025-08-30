@@ -157,16 +157,16 @@ with
       t2.high_net as team2_high,
       case
         when t1.low_net < t2.low_net
+        and t1.high_net <= t2.high_net
+        or t1.low_net <= t2.low_net
         and t1.high_net < t2.high_net then 1::numeric
-        when t1.low_net = t2.low_net
-        and t1.high_net = t2.high_net then 0.5
         else 0::numeric
       end as team1_hole_result,
       case
         when t2.low_net < t1.low_net
+        and t2.high_net <= t1.high_net
+        or t2.low_net <= t1.low_net
         and t2.high_net < t1.high_net then 1::numeric
-        when t1.low_net = t2.low_net
-        and t1.high_net = t2.high_net then 0.5
         else 0::numeric
       end as team2_hole_result
     from
