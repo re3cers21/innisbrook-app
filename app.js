@@ -807,4 +807,183 @@ function renderRecentRounds(data) {
             const scoreToPar = score - par;
             if (scoreToPar > 0) {
                 scoreToParDisplay = `+${scoreToPar}`;
-            } else if
+            } else if (scoreToPar < 0) {
+                scoreToParDisplay = `${scoreToPar}`;
+            } else {
+                scoreToParDisplay = 'E';
+            }
+        }
+        recentRoundsContainer.innerHTML += `
+            <div class="card p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">${round.round_date}</p>
+                        <p class="text-lg font-bold text-gray-800">${round.course_name} - ${round.tee_name}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Score</p>
+                        <p class="text-xl font-bold text-gray-800">${score}</p>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button class="text-sm font-semibold text-blue-600 hover:underline" onclick="showRoundDetails(${round.round_id})">View Details</button>
+                </div>
+            </div>`;
+    });
+}
+
+// Initial Data Fetch
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    const playersPromise = fetchPlayers();
+    const recentRoundsPromise = fetchRecentRounds();
+    await Promise.all([playersPromise, recentRoundsPromise]);
+    
+    // Show players view by default
+    showView('players');
+
+    // Debugging: Log allPlayersData structure
+    setTimeout(() => {
+        console.log('--- DEBUG: allPlayersData structure ---');
+        console.log(JSON.stringify(allPlayersData, null, 2));
+    }, 1000);
+});
+
+// --- Error Handling ---
+function showError(message, details = '') {
+    errorMessage.innerHTML = `
+        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            <span class="font-semibold">Error:</span> ${message}
+            ${details ? `<br><span class="font-medium">Details:</span> ${details}` : ''}
+        </div>`;
+    loader.classList.add('hidden');
+}
+
+// --- Player Profile ---
+async function fetchPlayerProfile(playerId) {
+    try {
+        const { data, error } = await supabase
+            .from('Players')
+            .select('*')
+            .eq('player_id', playerId)
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        showError('Failed to fetch player profile.', e.message);
+        return null;
+    }
+}
+
+function showPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-2">Player ID: ${player.player_id}</p>
+                <p class="text-sm text-gray-500 mb-4">Team: ${player.team || 'N/A'}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Profile</h3>
+                        <p class="text-sm text-gray-700">HCP: ${player.handicap_index}</p>
+                        <p class="text-sm text-gray-700">Email: ${player.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Stats</h3>
+                        <p class="text-sm text-gray-700">Rounds: ${player.rounds_played || 0}</p>
+                        <p class="text-sm text-gray-700">Avg Score: ${player.avg_score !== null ? player.avg_score.toFixed(1) : 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700" onclick="editPlayerProfile(${player.player_id})">Edit Profile</button>
+                </div>
+            </div>`;
+    });
+}
+
+// --- Edit Player Profile ---
+function editPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data in editable form
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">Edit Profile - ${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-4">Player ID: ${player.player_id}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-name">Name</label>
+                        <input type="text" id="edit-name" class="block w-full p-2 border rounded-md" value="${player.name}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-team">Team</label>
+                        <input type="text" id="edit-team" class="block w-full p-2 border rounded-md" value="${player.team || ''}">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700" onclick="savePlayerProfile(${player.player_id})">Save Changes</button>
+                    <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400" onclick="showPlayerProfile(${player.player_id})">Cancel</button>
+                </div>
+            </div>`;
+    });
+}
+
+async function savePlayerProfile(playerId) {
+    const name = document.getElementById('edit-name').value.trim();
+    const team = document.getElementById('edit-team').value.trim();
+
+    if (!name) {
+        return showError('Name is required.');
+    }
+
+    try {
+        const { error } = await supabase
+            .from('Players')
+            .update({ name, team })
+            .eq('player_id', playerId);
+
+        if (error) throw error;
+
+        // Refresh player profile
+        showPlayerProfile(playerId);
+    } catch (e) {
+        showError('Failed to save profile changes.', e.message);
+    }
+}
+
+// --- Initial Setup ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
+
+    // Fetch and render recent rounds
+    fetchRecentRounds();
+
+    // Debugging: Log allPlayersData structure
+    setTimeout(() => {
+        console.log('--- DEBUG: allPlayersData structure ---');
+        console.log(JSON.stringify(allPlayersData, null, 2));
+    }, 1000);
+});
