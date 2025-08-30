@@ -205,6 +205,11 @@ async function fetchPlayers() {
     if (!matchupsError) {
         window.hiloMatchups = matchups;
     }
+    // Fetch detailed_scores for initials in Team Game
+    const { data: detailedScores, error: dsError } = await supabase.from('detailed_scores').select('*');
+    if (!dsError) {
+        window.detailedScores = detailedScores;
+    }
 }
 
 // Removed: fetchHandicaps, as handicaps section is gone
@@ -516,7 +521,53 @@ async function renderRoundDetails(roundId) {
                             if (row.team1_running > 0) running = `${row.team1} +${row.team1_running}`;
                             else if (row.team1_running < 0) running = `${row.team2} +${-row.team1_running}`;
                             else running = 'All Square';
-                            teamHtml += `<tr class="${rowClass}"><td class="text-center">${idx + 1}</td><td class="text-center">${row.team1_low}</td><td class="text-center">${row.team1_high}</td><td class="text-center">${row.team2_low}</td><td class="text-center">${row.team2_high}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+
+                            // Find initials for low/high for each team
+                            let t1LowInitials = '', t1HighInitials = '', t2LowInitials = '', t2HighInitials = '';
+                            if (window.hiloMatchups && window.allPlayers) {
+                                // For each team, get player IDs in this match
+                                const t1ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team1).map(m => m.player_id);
+                                const t2ids = window.hiloMatchups.filter(m => m.match_number == matchNum && m.team === row.team2).map(m => m.player_id);
+                                // For each, get net_strokes for this hole from detailed_scores (row.hole_id)
+                                // We don't have net_strokes per player in this row, so we need to look up
+                                // Instead, use hiloMatchups + allPlayers + detailed_scores
+                                // We'll use window.detailedScores if available, else skip
+                                if (window.detailedScores) {
+                                    // Team 1 Low
+                                    let t1Low = null, t1High = null;
+                                    t1ids.forEach(pid => {
+                                        const score = window.detailedScores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
+                                        if (!score) return;
+                                        if (score.net_strokes == row.team1_low) t1Low = pid;
+                                        if (score.net_strokes == row.team1_high) t1High = pid;
+                                    });
+                                    // Team 2 Low/High
+                                    let t2Low = null, t2High = null;
+                                    t2ids.forEach(pid => {
+                                        const score = window.detailedScores.find(s => s.player_id == pid && s.hole_id == row.hole_id);
+                                        if (!score) return;
+                                        if (score.net_strokes == row.team2_low) t2Low = pid;
+                                        if (score.net_strokes == row.team2_high) t2High = pid;
+                                    });
+                                    // Get initials
+                                    const getInitials = pid => {
+                                        const p = window.allPlayers.find(pl => pl.player_id == pid);
+                                        if (!p) return '';
+                                        return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
+                                    };
+                                    t1LowInitials = t1Low ? getInitials(t1Low) : '';
+                                    t1HighInitials = t1High ? getInitials(t1High) : '';
+                                    t2LowInitials = t2Low ? getInitials(t2Low) : '';
+                                    t2HighInitials = t2High ? getInitials(t2High) : '';
+                                }
+                            }
+                            // Add initials next to scores
+                            const t1LowCell = `${row.team1_low}${t1LowInitials ? ` <span class='text-xs text-gray-500'>(${t1LowInitials})</span>` : ''}`;
+                            const t1HighCell = `${row.team1_high}${t1HighInitials ? ` <span class='text-xs text-gray-500'>(${t1HighInitials})</span>` : ''}`;
+                            const t2LowCell = `${row.team2_low}${t2LowInitials ? ` <span class='text-xs text-gray-500'>(${t2LowInitials})</span>` : ''}`;
+                            const t2HighCell = `${row.team2_high}${t2HighInitials ? ` <span class='text-xs text-gray-500'>(${t2HighInitials})</span>` : ''}`;
+
+                            teamHtml += `<tr class="${rowClass}"><td class="text-center">${idx + 1}</td><td class="text-center">${t1LowCell}</td><td class="text-center">${t1HighCell}</td><td class="text-center">${t2LowCell}</td><td class="text-center">${t2HighCell}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
                         });
                         teamHtml += `</tbody></table></div></div>`;
                     });
