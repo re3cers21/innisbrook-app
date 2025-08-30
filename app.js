@@ -1023,3 +1023,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Hide loader after initial setup
     loader.classList.add('hidden');
 });
+
+function getInitials(pid) {
+    const p = window.allPlayers.find(pl => pl.player_id == pid);
+    if (!p) return '';
+    return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
