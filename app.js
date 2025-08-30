@@ -35,13 +35,29 @@ function renderPlayers(data) {
 
 async function fetchRecentRounds() {
     try {
-        const { data, error } = await supabase.from('recent_rounds_view').select('*');
+        // Fetch recent rounds with course and tee info
+        const { data, error } = await supabase
+            .from('recent_rounds_view')
+            .select('*');
         if (error) throw error;
         allRecentRounds = data;
         renderRoundSelector(data);
     } catch (e) {
         showError('Failed to fetch recent rounds.', e.message);
     }
+}
+
+// Fetch all rounds with course and tee info for round selector
+async function fetchAllRounds() {
+    const { data, error } = await supabase
+        .from('Rounds')
+        .select(`round_id, round_date, round_number, tee_id, Tees (tee_name, tee_rating, tee_slope), course_id, Courses (course_name, total_par)`)
+        .order('round_date', { ascending: true });
+    if (error) {
+        showError('Failed to load rounds', error.message);
+        return [];
+    }
+    return data;
 }
 // ...existing code...
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
@@ -190,36 +206,31 @@ async function fetchPlayers() {
 
 function renderRoundSelector(rounds) {
     recentRoundsContainer.innerHTML = '';
-    // Define all 5 rounds (static info or fallback if not in data)
-    const allRounds = [
-        { round_id: 1, course_name: 'South Course', round_date: '2025-09-04' },
-        { round_id: 2, course_name: 'Island Course', round_date: '2025-09-05' },
-        { round_id: 3, course_name: 'Copperhead', round_date: '2025-09-06' },
-        { round_id: 4, course_name: 'North Course', round_date: '2025-09-07' },
-        { round_id: 5, course_name: 'Island Course', round_date: '2025-09-08' }
-    ];
-    // Merge with actual data if present
-    const roundMap = {};
-    (rounds || []).forEach(r => { roundMap[r.round_id] = r; });
-    const mergedRounds = allRounds.map(r => roundMap[r.round_id] ? { ...r, ...roundMap[r.round_id] } : r);
-    // Render round selector buttons
-    const selectorDiv = document.createElement('div');
-    selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
-    mergedRounds.forEach(round => {
-        const btn = document.createElement('button');
-        btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
-        btn.textContent = `${round.course_name} (${new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })})`;
-        btn.onclick = () => {
-            selectedRoundId = round.round_id;
-            renderRoundSelector(rounds);
-            // Only call renderRoundDetails here, not in renderRoundSelector
-            renderRoundDetails(round.round_id);
-        };
-        selectorDiv.appendChild(btn);
+    // Use live rounds from DB if available
+    fetchAllRounds().then(allRounds => {
+        if (!allRounds || allRounds.length === 0) {
+            recentRoundsContainer.innerHTML = '<div class="card p-5 text-center text-gray-500">No rounds found.</div>';
+            return;
+        }
+        const selectorDiv = document.createElement('div');
+        selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
+        allRounds.forEach(round => {
+            const course = round.Courses || {};
+            const tee = round.Tees || {};
+            const btn = document.createElement('button');
+            btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
+            btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${new Date(round.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`;
+            btn.onclick = () => {
+                selectedRoundId = round.round_id;
+                renderRoundSelector();
+                renderRoundDetails(round.round_id);
+            };
+            selectorDiv.appendChild(btn);
+        });
+        recentRoundsContainer.appendChild(selectorDiv);
+        // Only show a scorecard if a round is selected, and only from the tab click handler
+        document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
     });
-    recentRoundsContainer.appendChild(selectorDiv);
-    // Only show a scorecard if a round is selected, and only from the tab click handler
-    document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
 }
 
 async function renderRoundDetails(roundId) {
@@ -463,6 +474,19 @@ function renderProfile(player, rounds) {
     const profileHeader = document.getElementById('profileHeader');
     const profileRoundsContainer = document.getElementById('profileRoundsContainer');
     profileHeader.innerHTML = `<div class="card p-6"><h2 class="text-3xl font-bold text-gray-900">${player.name}</h2><p class="mt-1 text-lg text-emerald-600 font-semibold">Handicap Index: ${player.handicap_index}</p></div>`;
+    // Fetch and show course handicaps for this player
+    fetchPlayerCourseHandicaps(player.player_id).then(handicaps => {
+        if (handicaps && handicaps.length > 0) {
+            profileHeader.innerHTML += `
+                <div class="mt-4">
+                    <h3 class="text-lg font-semibold mb-1">Course Handicaps</h3>
+                    <ul class="text-sm">
+                        ${handicaps.map(h => `<li>${h.course_name} (${h.tee_name}): <strong>${h.course_handicap}</strong></li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+    });
     profileRoundsContainer.innerHTML = '';
     if (rounds.length === 0) {
         profileRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No round history found for this player.</div>`;
@@ -484,6 +508,67 @@ function renderProfile(player, rounds) {
         item.innerHTML = `<div class="flex items-center space-x-4"><div class="flex-shrink-0"><div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center"><span class="text-xl font-bold text-gray-700">${score}</span></div></div><div><p class="font-semibold text-gray-800">${round.course_name}</p><p class="text-sm text-gray-500">${round.tee_name}</p></div></div><div class="text-right"><p class="text-lg font-semibold text-gray-700">${scoreToParDisplay}</p><p class="text-sm text-gray-500">${date}</p></div>`;
         profileRoundsContainer.appendChild(item);
     });
+// Fetch course handicaps for a player
+async function fetchPlayerCourseHandicaps(playerId) {
+    const { data, error } = await supabase
+        .from('course_handicap_view')
+        .select('*')
+        .eq('player_id', playerId);
+    if (error) {
+        showError('Failed to load course handicaps', error.message);
+        return [];
+    }
+    return data;
+}
+
+// Fetch net leaderboard from view
+async function fetchNetLeaderboard() {
+    const { data, error } = await supabase
+        .from('player_round_net_scores')
+        .select('*')
+        .order('total_net_score', { ascending: true });
+    if (error) {
+        showError('Failed to load net leaderboard', error.message);
+        return [];
+    }
+    return data;
+}
+
+// Render net leaderboard
+async function renderNetLeaderboard() {
+    const leaderboard = await fetchNetLeaderboard();
+    const container = document.getElementById('leaderboard-net');
+    if (!container) return;
+    container.innerHTML = `
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead><tr>
+            <th class="px-4 py-2">Player</th><th class="px-4 py-2">Round Date</th><th class="px-4 py-2">Course</th><th class="px-4 py-2">Net Score</th>
+          </tr></thead>
+          <tbody>
+            ${leaderboard.map(row => `
+              <tr>
+                <td class="font-semibold">${row.player_name}</td>
+                <td>${new Date(row.round_date).toLocaleDateString('en-US')}</td>
+                <td>${row.course_name}</td>
+                <td class="text-center font-bold">${row.total_net_score}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+    `;
+}
+
+// Call renderNetLeaderboard when leaderboard net tab is shown
+document.addEventListener('DOMContentLoaded', () => {
+    const netTab = document.getElementById('leaderboard-tab-net');
+    if (netTab) {
+        netTab.addEventListener('click', renderNetLeaderboard);
+    }
+    // Optionally, render on load if net tab is default
+    if (document.getElementById('leaderboard-net') && netTab && netTab.classList.contains('active')) {
+        renderNetLeaderboard();
+    }
+});
 }
 
 function showError(message, details) {
