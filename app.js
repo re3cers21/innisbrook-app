@@ -581,13 +581,18 @@ async function renderRoundDetails(roundId) {
                             const t2ids = window.hiloMatchups
                                 .filter(m => m.round_id == roundId && m.match_number == matchNum && m.team === team2)
                                 .map(m => m.player_id);
+
+                            // Highlight player names if their team won the match
+                            const t1Highlight = matchWinner === team1 ? 'text-emerald-600 font-bold' : '';
+                            const t2Highlight = matchWinner === team2 ? 'text-emerald-600 font-bold' : '';
+
                             team1Players = t1ids.map(pid => {
                                 const p = window.allPlayers.find(pl => pl.player_id == pid);
-                                return p ? p.name : '';
+                                return p ? `<span class="${t1Highlight}">${p.name}</span>` : '';
                             }).filter(Boolean).join(', ');
                             team2Players = t2ids.map(pid => {
                                 const p = window.allPlayers.find(pl => pl.player_id == pid);
-                                return p ? p.name : '';
+                                return p ? `<span class="${t2Highlight}">${p.name}</span>` : '';
                             }).filter(Boolean).join(', ');
                         }
 
