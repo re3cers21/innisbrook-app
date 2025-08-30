@@ -282,31 +282,42 @@ async function renderRoundDetails(roundId) {
     if (!round) return;
     // Fetch holes for this course
     let holes = [];
+    let holesError = null;
     try {
         if (round && round.course_id) {
-            const { data: holesData, error: holesError } = await supabase
+            const { data: holesData, error } = await supabase
                 .from('Holes')
                 .select('*')
                 .eq('course_id', round.course_id)
                 .order('hole_number');
-            if (holesError) {
-                console.error('Supabase Holes error:', holesError);
-                showError('Failed to fetch holes.', holesError.message);
+            holesError = error;
+            if (error) {
+                console.error('Supabase Holes error:', error);
             } else {
                 console.log('Supabase Holes data:', holesData);
+                holes = holesData;
             }
-            holes = holesData;
         }
     } catch (e) {
-        // fallback: show blank holes (18 holes, par 4, hdcp 1-18)
-        holes = Array.from({ length: 18 }, (_, i) => ({
-            hole_number: i + 1,
-            hole_par: 4,
-            hole_handicap: i + 1,
-            hole_id: i + 1
-        }));
+        holesError = e;
     }
     // For Rounds 1 and 2, do NOT override holes array; always use Holes table for column headers
+    if ((roundId === 1 || roundId === 2)) {
+        if (!holes || holes.length === 0 || holesError) {
+            showError('Failed to load holes for this round. Please check the Holes table in Supabase.', holesError ? holesError.message : 'No holes found.');
+            return;
+        }
+    } else {
+        // For other rounds, fallback to generic holes if needed
+        if (!holes || holes.length === 0) {
+            holes = Array.from({ length: 18 }, (_, i) => ({
+                hole_number: i + 1,
+                hole_par: 4,
+                hole_handicap: i + 1,
+                hole_id: i + 1
+            }));
+        }
+    }
     // Fetch all scores for this round for Gross/Net display
     let scores = [];
     try {
