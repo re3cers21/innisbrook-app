@@ -283,18 +283,41 @@ async function renderRoundDetails(roundId) {
     let round = roundPlayers[0] || roundMeta || null;
     // If still no metadata, bail out quietly
     if (!round && !roundMeta) return;
-    const courseId = roundMeta && roundMeta.course_id ? Number(roundMeta.course_id) : (round && round.course_id ? Number(round.course_id) : null);
+    
+    // FIX: Better course_id resolution
+    let courseId = null;
+    if (roundMeta && roundMeta.course_id) {
+        courseId = Number(roundMeta.course_id);
+    } else if (round && round.course_id) {
+        courseId = Number(round.course_id);
+    } else {
+        // Last resort: query Rounds table directly
+        try {
+            const { data: roundData, error: roundError } = await supabase
+                .from('Rounds')
+                .select('course_id')
+                .eq('round_id', roundId)
+                .single();
+            if (!roundError && roundData) {
+                courseId = Number(roundData.course_id);
+            }
+        } catch (e) {
+            console.error('Failed to fetch round course_id:', e);
+        }
+    }
+    
     console.log('DEBUG: renderRoundDetails meta', { roundId, courseId, roundMeta, roundFromView: roundPlayers[0] });
+    
     // Fetch holes for this course
     let holes = [];
     let holesError = null;
     try {
         if (courseId) {
-            console.log('DEBUG: round.course_id =', round.course_id, 'typeof:', typeof round.course_id);
+            console.log('DEBUG: Using course_id =', courseId, 'typeof:', typeof courseId);
             const { data: holesData, error } = await supabase
                 .from('Holes')
                 .select('*')
-                .eq('course_id', Number(courseId))
+                .eq('course_id', courseId)
                 .order('hole_number');
             console.log('DEBUG: Holes query result:', { course_id: courseId, holesData, error });
             holesError = error;
@@ -302,17 +325,21 @@ async function renderRoundDetails(roundId) {
                 console.error('Supabase Holes error:', error);
             } else {
                 console.log('Supabase Holes data:', holesData);
-                holes = holesData;
+                holes = holesData || [];
             }
+        } else {
+            console.error('DEBUG: No course_id found for round', roundId);
+            holesError = new Error('No course_id found for this round');
         }
     } catch (e) {
         holesError = e;
         console.error('Supabase Holes exception:', e);
     }
+    
     // For Rounds 1 and 2, do NOT override holes array; always use Holes table for column headers
     if ((roundId === 1 || roundId === 2)) {
         if (!holes || holes.length === 0 || holesError) {
-            showError('Failed to load holes for this round. Please check the Holes table in Supabase.', holesError ? holesError.message : 'No holes found.');
+            showError(`Failed to load holes for Round ${roundId}. Course ID: ${courseId}. Please check that the Rounds table has the correct course_id and that holes exist in the Holes table for this course.`, holesError ? holesError.message : 'No holes found.');
             return;
         }
     } else {
