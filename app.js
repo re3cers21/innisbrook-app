@@ -1,4 +1,18 @@
 // --- Function Declarations ---
+async function fetchRecentRounds() {
+    try {
+        // Fetch recent rounds with course and tee info
+        const { data, error } = await supabase
+            .from('recent_rounds_view')
+            .select('*');
+        if (error) throw error;
+        allRecentRounds = data;
+        renderRoundSelector(data);
+    } catch (e) {
+        showError('Failed to fetch recent rounds.', e.message);
+    }
+}
+// --- Function Declarations ---
     async function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
