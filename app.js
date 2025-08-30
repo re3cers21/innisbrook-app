@@ -373,15 +373,6 @@ async function renderRoundDetails(roundId) {
     }
     // Initial render
     renderScorecardTables();
-            } else {
-                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
-            }
-            teamHtml += `</div>`;
-            container.innerHTML += teamHtml;
-        }
-    }
-    // Initial render
-    renderScorecardTables();
 }
 
 // Removed: renderHandicaps, as handicaps section is gone
