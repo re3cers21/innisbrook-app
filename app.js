@@ -1,99 +1,8 @@
-function renderPlayers(data) {
-    playersTableBody.innerHTML = '';
-    data.forEach(p => {
-        const r = playersTableBody.insertRow();
-        r.className = "hover:bg-gray-50";
-        r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
-    });
-}
-
-// Stub for renderTeams to prevent not defined errors
-function renderTeams(data) {
-    // TODO: Implement team rendering logic
-    // This is a placeholder to prevent errors
-}
-async function fetchAllRounds() {
-    const { data, error } = await supabase
-        .from('Rounds')
-        .select(`round_id, round_date, round_number, tee_id, Tees (tee_name, tee_rating, tee_slope), course_id, Courses (course_name, total_par)`)
-        .order('round_date', { ascending: true });
-    if (error) {
-        showError('Failed to load rounds', error.message);
-        return [];
-    }
-    return data;
-}
-// --- Function Declarations ---
-async function fetchRecentRounds() {
-    try {
-        // Fetch recent rounds with course and tee info
-        const { data, error } = await supabase
-            .from('recent_rounds_view')
-            .select('*');
-        if (error) throw error;
-        allRecentRounds = data;
-        renderRoundSelector(data);
-    } catch (e) {
-        showError('Failed to fetch recent rounds.', e.message);
-    }
-}
 // --- Function Declarations ---
     async function renderScorecardTables() {
         const container = detailsDiv.querySelector('#scorecardTables');
         container.innerHTML = '';
-
-        // GROSS SCORECARD
-        if (window.scorecardTypeState[roundId].gross) {
-            let grossHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Gross Scorecard</h4>`;
-            if (scores.length === 0) {
-                grossHtml += `<div class="text-gray-500 italic">No gross score data available for this round.</div></div>`;
-            } else {
-                // Group scores by player
-                const players = {};
-                scores.forEach(row => {
-                    if (!players[row.player_id]) players[row.player_id] = { name: row.player_name, scores: [] };
-                    players[row.player_id].scores[row.hole_id - 1] = row.gross_strokes;
-                });
-                grossHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table border rounded-lg overflow-hidden"><thead class="bg-gray-100"><tr><th class="px-2 py-1">Player</th>`;
-                for (let i = 1; i <= 18; i++) grossHtml += `<th class="px-2 py-1">${i}</th>`;
-                grossHtml += `<th class="px-2 py-1">Total</th></tr></thead><tbody>`;
-                Object.values(players).forEach(player => {
-                    const total = player.scores.reduce((a, b) => a + (b || 0), 0);
-                    grossHtml += `<tr><td class="font-semibold">${player.name}</td>`;
-                    for (let i = 0; i < 18; i++) grossHtml += `<td class="text-center">${player.scores[i] ?? ''}</td>`;
-                    grossHtml += `<td class="font-bold text-center">${total}</td></tr>`;
-                });
-                grossHtml += `</tbody></table></div>`;
-            }
-            container.innerHTML += grossHtml;
-        }
-
-        // NET SCORECARD
-        if (window.scorecardTypeState[roundId].net) {
-            let netHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Net Scorecard</h4>`;
-            if (scores.length === 0) {
-                netHtml += `<div class="text-gray-500 italic">No net score data available for this round.</div></div>`;
-            } else {
-                // Group scores by player
-                const players = {};
-                scores.forEach(row => {
-                    if (!players[row.player_id]) players[row.player_id] = { name: row.player_name, scores: [] };
-                    players[row.player_id].scores[row.hole_id - 1] = row.net_strokes;
-                });
-                netHtml += `<table class="min-w-full text-xs md:text-sm scoreboard-table border rounded-lg overflow-hidden"><thead class="bg-gray-100"><tr><th class="px-2 py-1">Player</th>`;
-                for (let i = 1; i <= 18; i++) netHtml += `<th class="px-2 py-1">${i}</th>`;
-                netHtml += `<th class="px-2 py-1">Total</th></tr></thead><tbody>`;
-                Object.values(players).forEach(player => {
-                    const total = player.scores.reduce((a, b) => a + (b || 0), 0);
-                    netHtml += `<tr><td class="font-semibold">${player.name}</td>`;
-                    for (let i = 0; i < 18; i++) netHtml += `<td class="text-center">${player.scores[i] ?? ''}</td>`;
-                    netHtml += `<td class="font-bold text-center">${total}</td></tr>`;
-                });
-                netHtml += `</tbody></table></div>`;
-            }
-            container.innerHTML += netHtml;
-        }
-
+        // ...existing code for gross and net...
         // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
@@ -455,6 +364,15 @@ async function renderRoundDetails(roundId) {
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
+            } else {
+                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
+            }
+            teamHtml += `</div>`;
+            container.innerHTML += teamHtml;
+        }
+    }
+    // Initial render
+    renderScorecardTables();
             } else {
                 teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
             }
