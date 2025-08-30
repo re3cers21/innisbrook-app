@@ -833,18 +833,36 @@ function renderRecentRounds(data) {
 // Initial Data Fetch
 document.addEventListener('DOMContentLoaded', async () => {
     // Fetch players and recent rounds in parallel
-    const playersPromise = fetchPlayers();
-    const recentRoundsPromise = fetchRecentRounds();
-    await Promise.all([playersPromise, recentRoundsPromise]);
-    
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
     // Show players view by default
     showView('players');
 
-    // Debugging: Log allPlayersData structure
-    setTimeout(() => {
-        console.log('--- DEBUG: allPlayersData structure ---');
-        console.log(JSON.stringify(allPlayersData, null, 2));
-    }, 1000);
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard');
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
 });
 
 // --- Error Handling ---
@@ -972,16 +990,36 @@ async function savePlayerProfile(playerId) {
 }
 
 // --- Initial Setup ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
+    // Show players view by default
+    showView('players');
+
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard');
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+
     // Hide loader after initial setup
     loader.classList.add('hidden');
-
-    // Fetch and render recent rounds
-    fetchRecentRounds();
-
-    // Debugging: Log allPlayersData structure
-    setTimeout(() => {
-        console.log('--- DEBUG: allPlayersData structure ---');
-        console.log(JSON.stringify(allPlayersData, null, 2));
-    }, 1000);
 });
