@@ -288,12 +288,10 @@ async function renderRoundDetails(roundId) {
     // Fetch all scores for this round from detailed_scores view
     let scores = [];
     try {
-        let { data: scoresData, error: scoresError } = await supabase
-            .from('detailed_scores')
-            .select('*')
-            .eq('round_id', roundId);
-        // If no detailed_scores, fallback to Scores table for Rounds 1/2
-        if ((!scoresData || scoresData.length === 0) && (roundId === 1 || roundId === 2)) {
+        let scoresData = [];
+        let scoresError = null;
+        // For Rounds 1 and 2, always use Scores table (not detailed_scores)
+        if (roundId === 1 || roundId === 2) {
             const { data: fallbackScores, error: fallbackError } = await supabase
                 .from('Scores')
                 .select('*')
@@ -306,9 +304,20 @@ async function renderRoundDetails(roundId) {
                     player_id: s.player_id,
                     hole_id: s.hole_id,
                     gross_strokes: s.gross_strokes,
-                    net_strokes: s.net_strokes
+                    // If net_strokes is null, fallback to gross_strokes
+                    net_strokes: s.net_strokes !== null && s.net_strokes !== undefined ? s.net_strokes : s.gross_strokes
                 }));
+            } else {
+                scoresData = [];
             }
+        } else {
+            // For other rounds, use detailed_scores view
+            const { data: dsData, error: dsError } = await supabase
+                .from('detailed_scores')
+                .select('*')
+                .eq('round_id', roundId);
+            scoresData = dsData || [];
+            scoresError = dsError;
         }
         if (scoresError) throw scoresError;
         scores = scoresData || [];
