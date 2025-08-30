@@ -48,21 +48,73 @@ async function fetchRecentRounds() {
 }
 
 // Fetch all rounds with course and tee info for round selector
-
-const SUPABASE_URL = 'https://pytfoklmefbeqdblvxcx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5dGZva2xtZWZiZXFkYmx2eGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNDM4MzgsImV4cCI6MjA3MDcxOTgzOH0.fZ65egcOvVgbF0Jp_-B_VNn4qW905cpq62oU0lIL0bA';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-async function initializeApp() {
-    const playersTableBody = document.getElementById('playersTableBody');
-    const teamHomzaContainer = document.getElementById('teamHomzaContainer');
-    const teamKinnairdContainer = document.getElementById('teamKinnairdContainer');
-    const players = await api.fetchPlayers(supabase);
-    render.renderPlayers(players, playersTableBody);
-    render.renderTeams(players, teamHomzaContainer, teamKinnairdContainer);
+async function fetchAllRounds() {
+    const { data, error } = await supabase
+        .from('Rounds')
+        .select(`round_id, round_date, round_number, tee_id, Tees (tee_name, tee_rating, tee_slope), course_id, Courses (course_name, total_par)`)
+        .order('round_date', { ascending: true });
+    if (error) {
+        showError('Failed to load rounds', error.message);
+        return [];
+    }
+    return data;
+}
+// ...existing code...
+// let recentRoundsContainer = document.getElementById('recentRoundsContainer');
+let allRecentRounds = [];
+let selectedRoundId = null;
+// --- Dark Mode Toggle ---
+document.addEventListener('DOMContentLoaded', () => {
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const darkModeIcon = document.getElementById('darkModeIcon');
+    const sunIconPath = "M12 4V2m0 20v-2m8-8h2M2 12H4m15.364-7.364l1.414 1.414M4.222 19.778l1.414-1.414M19.778 19.778l-1.414-1.414M4.222 4.222l1.414 1.414";
+    const moonIconPath = "M21 12.79A9 9 0 1111.21 3a7 7 0 0010.59 9.79z";
+    function setDarkMode(on) {
+        document.body.classList.toggle('dark-mode', on);
+        if (darkModeIcon) {
+            darkModeIcon.innerHTML = on
+                ? `<path d="${moonIconPath}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`
+                : `<path d="${sunIconPath}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+    }
+    // Persist mode in localStorage
+    const darkPref = localStorage.getItem('innisbrook-dark-mode');
+    if (darkPref === 'true') setDarkMode(true);
+    darkModeToggle.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('dark-mode');
+        setDarkMode(isDark);
+        localStorage.setItem('innisbrook-dark-mode', isDark);
+    });
+});
+// --- Leaderboard Sub-tab Navigation ---
+function showLeaderboardTab(tab) {
+    const tabs = ['team', 'net', 'gross'];
+    tabs.forEach(t => {
+        document.getElementById(`leaderboard-tab-${t}`).classList.remove('active');
+        document.getElementById(`leaderboard-${t}`).classList.add('hidden');
+    });
+    document.getElementById(`leaderboard-tab-${tab}`).classList.add('active');
+    document.getElementById(`leaderboard-${tab}`).classList.remove('hidden');
 }
 
+// Add event listeners for leaderboard sub-tabs after DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    ['team', 'net', 'gross'].forEach(tab => {
+        const btn = document.getElementById(`leaderboard-tab-${tab}`);
+        if (btn) {
+            btn.addEventListener('click', () => showLeaderboardTab(tab));
+        }
+    });
+});
+const SUPABASE_URL = 'https://pytfoklmefbeqdblvxcx.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB5dGZva2xtZWZiZXFkYmx2eGN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNDM4MzgsImV4cCI6MjA3MDcxOTgzOH0.fZ65egcOvVgbF0Jp_-B_VNn4qW905cpq62oU0lIL0bA';
 
+let supabase;
+try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (error) {
+    showError("Supabase initialization failed.", error.message);
+}
 
 // DOM Elements
 const loader = document.getElementById('loader');
