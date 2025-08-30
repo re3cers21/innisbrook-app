@@ -59,7 +59,6 @@ async function fetchAllRounds() {
     }
     return data;
 }
-// ...existing code...
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
 let allRecentRounds = [];
 let selectedRoundId = null;
@@ -138,6 +137,9 @@ const backButton = document.getElementById('backButton');
 // Removed: allHandicapData, as handicaps section is gone
 let allPlayersData = [];
 let lastActiveTab = 'players';
+
+// Make allPlayersData available globally for debugging
+window.allPlayersData = allPlayersData;
 
 // --- View & Tab Navigation ---
 function showView(viewName) {
