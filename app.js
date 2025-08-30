@@ -6,6 +6,12 @@ function renderPlayers(data) {
         r.innerHTML = `<td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900 clickable-player" data-player-id="${p.player_id}">${p.name}</div></td><td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">${p.handicap_index}</div></td>`;
     });
 }
+
+// Stub for renderTeams to prevent not defined errors
+function renderTeams(data) {
+    // TODO: Implement team rendering logic
+    // This is a placeholder to prevent errors
+}
 async function fetchAllRounds() {
     const { data, error } = await supabase
         .from('Rounds')
