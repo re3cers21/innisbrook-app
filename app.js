@@ -288,20 +288,31 @@ async function renderRoundDetails(roundId) {
     // Fetch all scores for this round from detailed_scores view
     let scores = [];
     try {
-        console.log('DEBUG: Fetching detailed_scores for round_id', roundId);
-        const { data: scoresData, error: scoresError } = await supabase
+        let { data: scoresData, error: scoresError } = await supabase
             .from('detailed_scores')
             .select('*')
             .eq('round_id', roundId);
-        console.log('DEBUG: detailed_scores result:', scoresData);
-        if (scoresError) {
-            console.error('DEBUG: detailed_scores error:', scoresError);
-            throw scoresError;
+        // If no detailed_scores, fallback to Scores table for Rounds 1/2
+        if ((!scoresData || scoresData.length === 0) && (roundId === 1 || roundId === 2)) {
+            const { data: fallbackScores, error: fallbackError } = await supabase
+                .from('Scores')
+                .select('*')
+                .eq('round_id', roundId);
+            if (!fallbackError && fallbackScores && fallbackScores.length > 0) {
+                // Map fallbackScores to detailed_scores shape
+                scoresData = fallbackScores.map(s => ({
+                    score_id: s.score_id,
+                    round_id: s.round_id,
+                    player_id: s.player_id,
+                    hole_id: s.hole_id,
+                    gross_strokes: s.gross_strokes,
+                    net_strokes: s.net_strokes
+                }));
+            }
         }
-        scores = scoresData;
+        if (scoresError) throw scoresError;
+        scores = scoresData || [];
     } catch (e) {
-        console.error('DEBUG: Exception fetching detailed_scores:', e);
-        // If error, just use blank scores
         scores = [];
     }
     // Scorecard type toggles
