@@ -253,10 +253,7 @@ function renderRoundSelector(rounds) {
             btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
-                // Only render details, do NOT call renderRoundSelector again
-                renderRoundDetails(round.round_id);
-                // Re-render buttons to update active state
-                renderRoundSelector(allRounds);
+                renderRoundSelector(allRounds); // Only call this, not renderRoundDetails directly
             };
             selectorDiv.appendChild(btn);
         });
