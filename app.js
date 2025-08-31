@@ -226,7 +226,8 @@ async function fetchPlayers() {
 
 
 function renderRoundSelector(rounds) {
-    recentRoundsContainer.innerHTML = ''; // <-- Add this line to clear previous content
+    recentRoundsContainer.innerHTML = ''; // Clear previous round selectors
+    document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove()); // Remove any lingering round details
     // Use live rounds from DB if available
     fetchAllRounds().then(allRounds => {
         if (!allRounds || allRounds.length === 0) {
@@ -841,7 +842,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Tab navigation
     document.getElementById('tab-players').addEventListener('click', () => showView('players'));
     document.getElementById('tab-dashboard').addEventListener('click', () => {
-        showView('dashboard');
+        showView('dashboard'); // Always show dashboard view first
         fetchRecentRounds();
     });
     document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
@@ -1000,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Tab navigation
     document.getElementById('tab-players').addEventListener('click', () => showView('players'));
     document.getElementById('tab-dashboard').addEventListener('click', () => {
-        showView('dashboard');
+        showView('dashboard'); // Always show dashboard view first
         fetchRecentRounds();
     });
     document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
