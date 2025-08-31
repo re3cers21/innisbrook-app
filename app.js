@@ -1,3 +1,29 @@
+// --- Round 5 Team Game Net Totals ---
+async function fetchTeamNetTotalsRound5() {
+    const { data, error } = await supabase
+        .from('team_net_totals_round5')
+        .select('*');
+    if (error) {
+        showError('Failed to fetch Round 5 team net totals.', error.message);
+        return [];
+    }
+    return data;
+}
+
+function renderTeamNetTotalsRound5(teamTotals) {
+    const container = document.getElementById('leaderboard-team');
+    if (!container) return;
+    if (!teamTotals || teamTotals.length === 0) {
+        container.innerHTML = '<div class="card p-5 text-center text-gray-500">No team scores for Round 5.</div>';
+        return;
+    }
+    let html = '<table class="table-auto w-full text-lg"><thead><tr><th>Team</th><th>Net Total</th></tr></thead><tbody>';
+    teamTotals.forEach(row => {
+        html += `<tr><td>${row.team}</td><td>${row.team_net_total}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
 // --- Function Declarations ---
 function renderTeams(data) {
     const createPlayerCard = player => {
@@ -859,7 +885,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         showView('dashboard'); // Always show dashboard view first
         fetchRecentRounds();
     });
-    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+    document.getElementById('tab-leaderboard').addEventListener('click', async () => {
+        showView('leaderboard');
+        // Only show team net totals for Round 5 in the Team tab
+        const leaderboardTeam = document.getElementById('leaderboard-team');
+        if (leaderboardTeam) {
+            // Optionally, you could check a round selector or state here. For now, always show Round 5 team game when Leaderboard tab is clicked.
+            const teamTotals = await fetchTeamNetTotalsRound5();
+            renderTeamNetTotalsRound5(teamTotals);
+        }
+    });
 
     // Players sub-tab navigation
     document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
