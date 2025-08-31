@@ -634,4 +634,39 @@ async function renderRoundDetails(roundId) {
                     const { data: teamTotals, error: teamTotalsError } = await supabase
                         .from('team_net_totals_round5')
                         .select('*');
-                    if
+                    if (teamTotalsError) throw teamTotalsError;
+                    if (!teamTotals || teamTotals.length === 0) {
+                        teamHtml += `<div class="text-gray-500 italic">No team net totals available for this round.</div>`;
+                    } else {
+                        // Sort teams by net total (lowest first)
+                        teamTotals.sort((a, b) => a.team_net_total - b.team_net_total);
+                        const winner = teamTotals[0].team;
+                        teamHtml += `<table class="min-w-full text-sm scoreboard-table mb-4"><thead><tr>
+                            <th class="px-4 py-2 text-left">Team</th>
+                            <th class="px-4 py-2 text-center">Total Net Score</th>
+                        </tr></thead><tbody>`;
+                        teamTotals.forEach(t => {
+                            const isWinner = t.team === winner;
+                            teamHtml += `<tr class="${isWinner ? 'bg-emerald-50 font-bold' : ''}">
+                                <td class="px-4 py-2">${t.team}${isWinner ? ' <span class="winner-badge">Winner</span>' : ''}</td>
+                                <td class="px-4 py-2 text-center">${t.team_net_total}</td>
+                            </tr>`;
+                        });
+                        teamHtml += `</tbody></table>`;
+                        teamHtml += `<div class="text-sm text-gray-600">The team with the lowest total net score wins 1 point toward the grand leaderboard.</div>`;
+                    }
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team net totals: ${err.message}</div>`;
+                }
+            } else if (roundId !== 3 && roundId !== 4) {
+                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
+            }
+            teamHtml += `</div>`;
+            container.innerHTML += teamHtml;
+        }
+        // END TEAM GAME
+    } // <-- End of renderScorecardTables
+
+    // Initial render
+    renderScorecardTables();
+} // <-- End of renderRoundDetails
