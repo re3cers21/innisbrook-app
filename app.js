@@ -573,6 +573,4 @@ async function renderRoundDetails(roundId) {
                         </tr></thead><tbody>`;
                         teamTotals.forEach(row => {
                             teamHtml += `<tr>
-                                <td class="px-4 py-2 font-semibold">${row.team}</td>
-                                <td class="px-4 py-2 text-center font-bold">${row.team_net_total}</td>
-                           
+       
