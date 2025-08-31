@@ -221,6 +221,10 @@ async function fetchPlayers() {
     if (!dsError) {
         window.detailedScores = detailedScores;
     }
+
+    // --- ADD THESE LINES ---
+    showView('players');
+    showPlayersSubView('all-players');
 }
 
 // Removed: fetchHandicaps, as handicaps section is gone
