@@ -1065,16 +1065,16 @@ async function renderGrossLeaderboard() {
         return;
     }
 
-    // Fetch par for each round
+    // Fetch par for each round by joining Rounds and Courses
     const { data: rounds, error: roundError } = await supabase
         .from('Rounds')
-        .select('round_id, total_par');
+        .select('round_id, course_id, Courses (total_par)');
     if (roundError) {
         leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading rounds: ${roundError.message}</div>`;
         return;
     }
     const parByRound = {};
-    rounds.forEach(r => { parByRound[r.round_id] = r.total_par; });
+    rounds.forEach(r => { parByRound[r.round_id] = r.Courses?.total_par || 0; });
 
     // Build leaderboard data
     const leaderboard = players.map(player => {
