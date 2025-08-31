@@ -554,80 +554,296 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += netHtml;
             }
         }
-        // TEAM GAME (Hi-Lo or Net Totals)
+        // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             if (roundId === 5) {
-                // Show team net totals for Round 5
-                try {
-                    const { data: teamTotals, error: teamTotalsError } = await supabase
-                        .from('team_net_totals_round5')
-                        .select('*');
-                    if (teamTotalsError) throw teamTotalsError;
-                    if (!teamTotals || teamTotals.length === 0) {
-                        teamHtml += `<div class="text-gray-500 italic">No team net totals available for this round.</div></div>`;
-                    } else {
-                        teamHtml += `<table class="min-w-full text-sm scoreboard-table mb-4"><thead><tr>
-                            <th class="px-4 py-2 text-left font-bold">Team</th>
-                            <th class="px-4 py-2 text-center font-bold">Total Net Score</th>
-                        </tr></thead><tbody>`;
-                        teamTotals.forEach(row => {
-                            teamHtml += `<tr>
-        <td class="px-4 py-2 font-semibold">${row.team}</td>
-        <td class="px-4 py-2 text-center font-bold">${row.team_net_total}</td>
-    </tr>`;
-                        });
-                        teamHtml += `</tbody></table></div>`;
-                    }
-                } catch (err) {
-                    teamHtml += `<div class="text-red-500 italic">Error loading team net totals: ${err.message}</div>`;
-                }
-            } else if (roundId === 1 || roundId === 2) {
-                // Hi-Lo logic for Rounds 1 and 2
-                const hiloResults = {};
-                allPlayersData.forEach(player => {
-                    const matchup = window.hiloMatchups.find(m => m.player_id === player.player_id);
-                    if (matchup) {
-                        hiloResults[player.player_id] = {
-                            name: player.name,
-                            team: matchup.team,
-                            score: matchup.final_score
-                        };
-                    }
-                });
-                // Sort by team, then by score
-                const sortedResults = Object.values(hiloResults).sort((a, b) => {
-                    if (a.team === b.team) {
-                        return (a.score || 0) - (b.score || 0);
-                    }
-                    return a.team.localeCompare(b.team);
-                });
-                // Group by team
-                const teams = {};
-                sortedResults.forEach(result => {
-                    if (!teams[result.team]) {
-                        teams[result.team] = [];
-                    }
-                    teams[result.team].push(result);
-                });
-                // Render
-                for (const [teamName, members] of Object.entries(teams)) {
-                    teamHtml += `<div class="font-semibold text-gray-900">${teamName}</div>`;
-                    members.forEach(member => {
-                        teamHtml += `<div class="flex justify-between px-4 py-2 border-b">
-        <span>${member.name}</span>
-        <span class="font-bold">${member.score !== null && member.score !== undefined ? member.score : '-'}</span>
-    </div>`;
-                    });
-                }
-                teamHtml += `<div class="text-gray-500 italic">Hi-Lo results for Rounds 1 & 2 not implemented here.</div></div>`;
-            } else {
-                teamHtml += `<div class="text-gray-500 italic">No team game for this round.</div></div>`;
-            }
-            container.innerHTML += teamHtml;
-        }
+                // Calculate team net totals for Round 5
+                const homzaTotal = allPlayersData
+                    .filter(p => p.team === 'Homza')
+                    .map(p => {
+                        return scores
+                            .filter(s => s.player_id === p.player_id)
+                            .reduce((sum, s) => sum + (Number(s.net_strokes) || 0), 0);
+                    })
+                    .reduce((sum, playerTotal) => sum + playerTotal, 0);
 
-        // Call the function to render tables initially
-        renderScorecardTables();
+                const kinnairdTotal = allPlayersData
+                    .filter(p => p.team === 'Kinnaird')
+                    .map(p => {
+                        return scores
+                            .filter(s => s.player_id === p.player_id)
+                            .reduce((sum, s) => sum + (Number(s.net_strokes) || 0), 0);
+                    })
+                    .reduce((sum, playerTotal) => sum + playerTotal, 0);
+
+                teamHtml += `
+            <table class="min-w-full text-sm scoreboard-table mb-4">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left font-bold">Team</th>
+                        <th class="px-4 py-2 text-center font-bold">Total Net Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="px-4 py-2 font-semibold">Homza</td>
+                        <td class="px-4 py-2 text-center font-bold">${homzaTotal}</td>
+                    </tr>
+                    <tr>
+                        <td class="px-4 py-2 font-semibold">Kinnaird</td>
+                        <td class="px-4 py-2 text-center font-bold">${kinnairdTotal}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>`;
+                container.innerHTML += teamHtml;
+                return; // Do not render any other team game content for round 5
+            }
+            // Only show Hi-Lo or "Coming soon" for other rounds as before
+            // (leave your existing logic here)
+        }
+        // ...rest of renderScorecardTables...
     }
-    // ...end of renderRoundDetails...
+    // Initial render
+    renderScorecardTables();
+}
+
+function renderRecentRounds(data) {
+    recentRoundsContainer.innerHTML = '';
+    if (data.length === 0) {
+        recentRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No recent rounds found.</div>`;
+        return;
+    }
+    data.forEach(round => {
+        const score = round.total_score || 'N/A';
+        const par = round.total_par || 'N/A';
+        let scoreToParDisplay = '';
+        if (score !== 'N/A' && par !== 'N/A') {
+            const scoreToPar = score - par;
+            if (scoreToPar > 0) {
+                scoreToParDisplay = `+${scoreToPar}`;
+            } else if (scoreToPar < 0) {
+                scoreToParDisplay = `${scoreToPar}`;
+            } else {
+                scoreToParDisplay = 'E';
+            }
+        }
+        recentRoundsContainer.innerHTML += `
+            <div class="card p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">${round.round_date}</p>
+                        <p class="text-lg font-bold text-gray-800">${round.course_name} - ${round.tee_name}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Score</p>
+                        <p class="text-xl font-bold text-gray-800">${score}</p>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button class="text-sm font-semibold text-blue-600 hover:underline" onclick="showRoundDetails(${round.round_id})">View Details</button>
+                </div>
+            </div>`;
+    });
+}
+
+// Initial Data Fetch
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
+    // Show players view by default
+    showView('players');
+
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard'); // Always show dashboard view first
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
+});
+
+// --- Error Handling ---
+function showError(message, details = '') {
+    errorMessage.innerHTML = `
+        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            <span class="font-semibold">Error:</span> ${message}
+            ${details ? `<br><span class="font-medium">Details:</span> ${details}` : ''}
+        </div>`;
+    loader.classList.add('hidden');
+}
+
+// --- Player Profile ---
+async function fetchPlayerProfile(playerId) {
+    try {
+        const { data, error } = await supabase
+            .from('Players')
+            .select('*')
+            .eq('player_id', playerId)
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        showError('Failed to fetch player profile.', e.message);
+        return null;
+    }
+}
+
+function showPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-2">Player ID: ${player.player_id}</p>
+                <p class="text-sm text-gray-500 mb-4">Team: ${player.team || 'N/A'}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Profile</h3>
+                        <p class="text-sm text-gray-700">HCP: ${player.handicap_index}</p>
+                        <p class="text-sm text-gray-700">Email: ${player.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Stats</h3>
+                        <p class="text-sm text-gray-700">Rounds: ${player.rounds_played || 0}</p>
+                        <p class="text-sm text-gray-700">Avg Score: ${player.avg_score !== null ? player.avg_score.toFixed(1) : 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700" onclick="editPlayerProfile(${player.player_id})">Edit Profile</button>
+                </div>
+            </div>`;
+    });
+}
+
+// --- Edit Player Profile ---
+function editPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data in editable form
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">Edit Profile - ${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-4">Player ID: ${player.player_id}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-name">Name</label>
+                        <input type="text" id="edit-name" class="block w-full p-2 border rounded-md" value="${player.name}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-team">Team</label>
+                        <input type="text" id="edit-team" class="block w-full p-2 border rounded-md" value="${player.team || ''}">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700" onclick="savePlayerProfile(${player.player_id})">Save Changes</button>
+                    <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400" onclick="showPlayerProfile(${player.player_id})">Cancel</button>
+                </div>
+            </div>`;
+    });
+}
+
+async function savePlayerProfile(playerId) {
+    const name = document.getElementById('edit-name').value.trim();
+    const team = document.getElementById('edit-team').value.trim();
+
+    if (!name) {
+        return showError('Name is required.');
+    }
+
+    try {
+        const { error } = await supabase
+            .from('Players')
+            .update({ name, team })
+            .eq('player_id', playerId);
+
+        if (error) throw error;
+
+        // Refresh player profile
+        showPlayerProfile(playerId);
+    } catch (e) {
+        showError('Failed to save profile changes.', e.message);
+    }
+}
+
+// --- Initial Setup ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
+    // Show players view by default
+    showView('players');
+
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard'); // Always show dashboard view first
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
+});
+
+function getInitials(pid) {
+    const p = window.allPlayers.find(pl => pl.player_id == pid);
+    if (!p) return '';
+    return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
