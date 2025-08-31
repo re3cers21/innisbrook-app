@@ -670,3 +670,7 @@ async function renderRoundDetails(roundId) {
     // Initial render
     renderScorecardTables();
 } // <-- End of renderRoundDetails
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchPlayers();
+});
