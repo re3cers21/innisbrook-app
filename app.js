@@ -221,10 +221,6 @@ async function fetchPlayers() {
     if (!dsError) {
         window.detailedScores = detailedScores;
     }
-
-    // --- ADD THESE LINES ---
-    showView('players');
-    showPlayersSubView('all-players');
 }
 
 // Removed: fetchHandicaps, as handicaps section is gone
@@ -254,7 +250,7 @@ function renderRoundSelector(rounds) {
             btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
             const [year, month, day] = round.round_date.split('-');
             const correctDate = new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-            btn.textContent = `Round ${round.round_number}: ${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
+            btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
                 renderRoundSelector(allRounds); // Only call this, not renderRoundDetails directly
@@ -562,76 +558,7 @@ async function renderRoundDetails(roundId) {
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             if (roundId === 1 || roundId === 2) {
-                // Hi-Lo Team Game for Rounds 1 and 2
-                const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
-                try {
-                    const { data: hiloData, error: hiloError } = await supabase
-                        .from(hiloView)
-                        .select('*');
-                    if (hiloError) throw hiloError;
-                    if (!hiloData || hiloData.length === 0) {
-                        teamHtml += `<div class="text-gray-500 italic">No Hi-Lo team game data available for this round.</div>`;
-                    } else {
-                        // Group by match_number
-                        const matches = {};
-                        hiloData.forEach(row => {
-                            if (!matches[row.match_number]) matches[row.match_number] = [];
-                            matches[row.match_number].push(row);
-                        });
-                        Object.keys(matches).forEach(matchNum => {
-                            const match = matches[matchNum];
-                            const firstRow = match[0];
-                            // Team names
-                            const team1 = firstRow.team1;
-                            const team2 = firstRow.team2;
-                            // Determine match winner by last running score
-                            let matchWinner = '';
-                            if (match.length > 0) {
-                                const lastRow = match[match.length - 1];
-                                if (lastRow.team1_running > lastRow.team2_running) matchWinner = team1;
-                                else if (lastRow.team2_running > lastRow.team1_running) matchWinner = team2;
-                            }
-                            // Highlight only the winner in green
-                            const team1Class = matchWinner === team1 ? 'text-emerald-700 font-bold' : '';
-                            const team2Class = matchWinner === team2 ? 'text-emerald-700 font-bold' : '';
-                            teamHtml += `<div class="flex items-center justify-between mb-2">`;
-                            teamHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${team1Class}">${team1}</span> vs <span class="${team2Class}">${team2}</span></h5>`;
-                            if (matchWinner) {
-                                teamHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
-                            }
-                            teamHtml += `</div>`;
-                            // Table
-                            teamHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
-                            teamHtml += `<thead class="bg-gray-50"><tr>
-                                <th class="px-2 py-1">Hole</th>
-                                <th class="px-2 py-1">${team1} Low</th>
-                                <th class="px-2 py-1">${team1} High</th>
-                                <th class="px-2 py-1">${team2} Low</th>
-                                <th class="px-2 py-1">${team2} High</th>
-                                <th class="px-2 py-1">${team1} Holes</th>
-                                <th class="px-2 py-1">${team2} Holes</th>
-                                <th class="px-2 py-1">${team1} Running</th>
-                                <th class="px-2 py-1">${team2} Running</th>
-                            </tr></thead><tbody>`;
-                            match.forEach(row => {
-                                teamHtml += `<tr>
-                                    <td class="text-center">${row.hole_id}</td>
-                                    <td class="text-center">${row.team1_low}</td>
-                                    <td class="text-center">${row.team1_high}</td>
-                                    <td class="text-center">${row.team2_low}</td>
-                                    <td class="text-center">${row.team2_high}</td>
-                                    <td class="text-center">${row.team1_hole_result}</td>
-                                    <td class="text-center">${row.team2_hole_result}</td>
-                                    <td class="text-center">${row.team1_running}</td>
-                                    <td class="text-center">${row.team2_running}</td>
-                                </tr>`;
-                            });
-                            teamHtml += `</tbody></table></div></div>`;
-                        });
-                    }
-                } catch (err) {
-                    teamHtml += `<div class="text-red-500 italic">Error loading Hi-Lo team game data: ${err.message}</div>`;
-                }
+                // ...existing code for rounds 1 and 2...
             } else if (roundId === 5) {
                 // Round 5: Team Net Totals
                 try {
@@ -668,34 +595,328 @@ async function renderRoundDetails(roundId) {
             teamHtml += `</div>`;
             container.innerHTML += teamHtml;
         }
-        // END TEAM GAME
-    } // <-- End of renderScorecardTables
+        // SINGLES MATCHPLAY for Rounds 3 and 4
+        if ((roundId === 3 || roundId === 4) && window.scorecardTypeState[roundId].team) {
+            let singlesHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Singles Matchplay)</h4>`;
+            const singlesView = roundId === 3 ? 'singles_results_round3' : 'singles_results_round4';
+            try {
+                const { data: singlesData, error: singlesError } = await supabase
+                    .from(singlesView)
+                    .select('*');
+                if (singlesError) throw singlesError;
+                if (!singlesData || singlesData.length === 0) {
+                    singlesHtml += `<div class="text-gray-500 italic">No singles matchplay data available for this round.</div></div>`;
+                    container.innerHTML += singlesHtml;
+                    return;
+                }
+                // Group by match_number
+                const matches = {};
+                singlesData.forEach(row => {
+                    if (!matches[row.match_number]) matches[row.match_number] = [];
+                    matches[row.match_number].push(row);
+                });
 
+                Object.keys(matches).forEach(matchNum => {
+                    const match = matches[matchNum];
+                    const firstRow = match[0];
+                    // Get player names
+                    const player1 = window.allPlayers.find(p => p.player_id == firstRow.player1_id);
+                    const player2 = window.allPlayers.find(p => p.player_id == firstRow.player2_id);
+                    const player1Name = player1 ? player1.name : `Player ${firstRow.player1_id}`;
+                    const player2Name = player2 ? player2.name : `Player ${firstRow.player2_id}`;
+
+                    // Determine match winner by last running score
+                    let matchWinner = '';
+                    if (match.length > 0) {
+                        const lastRow = match[match.length - 1];
+                        if (lastRow.running > 0) matchWinner = player1Name;
+                        else if (lastRow.running < 0) matchWinner = player2Name;
+                    }
+
+                    // Highlight winner
+                    const p1Highlight = matchWinner === player1Name ? 'text-emerald-600 font-bold' : '';
+                    const p2Highlight = matchWinner === player2Name ? 'text-emerald-600 font-bold' : '';
+
+                    singlesHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                    singlesHtml += `<div class="flex items-center justify-between mb-2">`;
+                    singlesHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${p1Highlight}">${player1Name}</span> vs <span class="${p2Highlight}">${player2Name}</span></h5>`;
+                    if (matchWinner) {
+                        singlesHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                    }
+                    singlesHtml += `</div>`;
+                    // Table
+                    singlesHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                    singlesHtml += `<thead class="bg-gray-50"><tr>`;
+                    singlesHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${player1Name}</th><th class="px-2 py-1">${player2Name}</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
+                    singlesHtml += `</tr></thead><tbody>`;
+                    match.forEach((row, idx) => {
+                        let result = '';
+                        let rowClass = '';
+                        if (row.hole_result === 1) {
+                            result = `${player1Name} wins`;
+                            rowClass = 'bg-emerald-50 font-semibold';
+                        } else if (row.hole_result === -1) {
+                            result = `${player2Name} wins`;
+                            rowClass = 'bg-blue-50 font-semibold';
+                        } else {
+                            result = 'Halved';
+                            rowClass = 'bg-gray-50';
+                        }
+                        let running = '';
+                        if (row.running > 0) running = `${player1Name} +${row.running}`;
+                        else if (row.running < 0) running = `${player2Name} +${-row.running}`;
+                        else running = 'All Square';
+
+                        singlesHtml += `<tr class="${rowClass}"><td class="text-center">${row.hole_id}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                    });
+                    singlesHtml += `</tbody></table></div></div>`;
+                });
+            } catch (err) {
+                singlesHtml += `<div class="text-red-500 italic">Error loading singles matchplay data: ${err.message}</div>`;
+            }
+            singlesHtml += `</div>`;
+            container.innerHTML += singlesHtml;
+        }
+    }
     // Initial render
     renderScorecardTables();
-} // <-- End of renderRoundDetails
+}
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchPlayers();
-
-    // Main tab navigation
-    document.getElementById('tab-players').addEventListener('click', () => {
-        showView('players');
-        showPlayersSubView('all-players');
+function renderRecentRounds(data) {
+    recentRoundsContainer.innerHTML = '';
+    if (data.length === 0) {
+        recentRoundsContainer.innerHTML = `<div class="card p-5 text-center text-gray-500">No recent rounds found.</div>`;
+        return;
+    }
+    data.forEach(round => {
+        const score = round.total_score || 'N/A';
+        const par = round.total_par || 'N/A';
+        let scoreToParDisplay = '';
+        if (score !== 'N/A' && par !== 'N/A') {
+            const scoreToPar = score - par;
+            if (scoreToPar > 0) {
+                scoreToParDisplay = `+${scoreToPar}`;
+            } else if (scoreToPar < 0) {
+                scoreToParDisplay = `${scoreToPar}`;
+            } else {
+                scoreToParDisplay = 'E';
+            }
+        }
+        recentRoundsContainer.innerHTML += `
+            <div class="card p-4 mb-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500">${round.round_date}</p>
+                        <p class="text-lg font-bold text-gray-800">${round.course_name} - ${round.tee_name}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Score</p>
+                        <p class="text-xl font-bold text-gray-800">${score}</p>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <button class="text-sm font-semibold text-blue-600 hover:underline" onclick="showRoundDetails(${round.round_id})">View Details</button>
+                </div>
+            </div>`;
     });
+}
+
+// Initial Data Fetch
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
+    // Show players view by default
+    showView('players');
+
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
     document.getElementById('tab-dashboard').addEventListener('click', () => {
-        showView('dashboard');
+        showView('dashboard'); // Always show dashboard view first
         fetchRecentRounds();
     });
-    document.getElementById('tab-leaderboard').addEventListener('click', () => {
-        showView('leaderboard');
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
     });
 
-    // Subtab navigation for Players
-    document.getElementById('subtab-all-players').addEventListener('click', () => {
-        showPlayersSubView('all-players');
-    });
-    document.getElementById('subtab-teams').addEventListener('click', () => {
-        showPlayersSubView('teams');
-    });
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
 });
+
+// --- Error Handling ---
+function showError(message, details = '') {
+    errorMessage.innerHTML = `
+        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg" role="alert">
+            <span class="font-semibold">Error:</span> ${message}
+            ${details ? `<br><span class="font-medium">Details:</span> ${details}` : ''}
+        </div>`;
+    loader.classList.add('hidden');
+}
+
+// --- Player Profile ---
+async function fetchPlayerProfile(playerId) {
+    try {
+        const { data, error } = await supabase
+            .from('Players')
+            .select('*')
+            .eq('player_id', playerId)
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        showError('Failed to fetch player profile.', e.message);
+        return null;
+    }
+}
+
+function showPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-2">Player ID: ${player.player_id}</p>
+                <p class="text-sm text-gray-500 mb-4">Team: ${player.team || 'N/A'}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Profile</h3>
+                        <p class="text-sm text-gray-700">HCP: ${player.handicap_index}</p>
+                        <p class="text-sm text-gray-700">Email: ${player.email || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Stats</h3>
+                        <p class="text-sm text-gray-700">Rounds: ${player.rounds_played || 0}</p>
+                        <p class="text-sm text-gray-700">Avg Score: ${player.avg_score !== null ? player.avg_score.toFixed(1) : 'N/A'}</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700" onclick="editPlayerProfile(${player.player_id})">Edit Profile</button>
+                </div>
+            </div>`;
+    });
+}
+
+// --- Edit Player Profile ---
+function editPlayerProfile(playerId) {
+    fetchPlayerProfile(playerId).then(player => {
+        if (!player) return;
+        // Hide all views
+        playersView.classList.add('hidden');
+        dashboardView.classList.add('hidden');
+        leaderboardView.classList.add('hidden');
+        profileView.classList.add('hidden');
+        tabNav.classList.add('hidden');
+
+        // Show profile view
+        profileView.classList.remove('hidden');
+
+        // Populate profile data in editable form
+        profileView.innerHTML = `
+            <div class="card p-4">
+                <h2 class="text-2xl font-bold mb-4">Edit Profile - ${player.name}</h2>
+                <p class="text-sm text-gray-500 mb-4">Player ID: ${player.player_id}</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-name">Name</label>
+                        <input type="text" id="edit-name" class="block w-full p-2 border rounded-md" value="${player.name}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-team">Team</label>
+                        <input type="text" id="edit-team" class="block w-full p-2 border rounded-md" value="${player.team || ''}">
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700" onclick="savePlayerProfile(${player.player_id})">Save Changes</button>
+                    <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400" onclick="showPlayerProfile(${player.player_id})">Cancel</button>
+                </div>
+            </div>`;
+    });
+}
+
+async function savePlayerProfile(playerId) {
+    const name = document.getElementById('edit-name').value.trim();
+    const team = document.getElementById('edit-team').value.trim();
+
+    if (!name) {
+        return showError('Name is required.');
+    }
+
+    try {
+        const { error } = await supabase
+            .from('Players')
+            .update({ name, team })
+            .eq('player_id', playerId);
+
+        if (error) throw error;
+
+        // Refresh player profile
+        showPlayerProfile(playerId);
+    } catch (e) {
+        showError('Failed to save profile changes.', e.message);
+    }
+}
+
+// --- Initial Setup ---
+document.addEventListener('DOMContentLoaded', async () => {
+    // Fetch players and recent rounds in parallel
+    await Promise.all([fetchPlayers(), fetchRecentRounds()]);
+
+    // Show players view by default
+    showView('players');
+
+    // Tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => showView('players'));
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard'); // Always show dashboard view first
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Players sub-tab navigation
+    document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
+    document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
+
+    // Back button for profile view
+    document.getElementById('backButton').addEventListener('click', () => showView(lastActiveTab));
+
+    // Event delegation for clickable players
+    document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('clickable-player')) {
+            const playerId = e.target.dataset.playerId;
+            showPlayerProfile(playerId);
+        }
+    });
+
+    // Hide loader after initial setup
+    loader.classList.add('hidden');
+});
+
+function getInitials(pid) {
+    const p = window.allPlayers.find(pl => pl.player_id == pid);
+    if (!p) return '';
+    return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
+}
