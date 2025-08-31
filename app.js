@@ -62,6 +62,7 @@ async function fetchAllRounds() {
 // let recentRoundsContainer = document.getElementById('recentRoundsContainer');
 let allRecentRounds = [];
 let selectedRoundId = null;
+let allRoundsCache = null; // Add this at the top, global scope
 // --- Dark Mode Toggle ---
 document.addEventListener('DOMContentLoaded', () => {
     const darkModeToggle = document.getElementById('darkModeToggle');
@@ -226,25 +227,20 @@ async function fetchPlayers() {
 
 
 function renderRoundSelector(rounds) {
-    recentRoundsContainer.innerHTML = ''; // Clear previous round selectors
-    document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove()); // Remove any lingering round details
-    // Use live rounds from DB if available
-    fetchAllRounds().then(allRounds => {
+    recentRoundsContainer.innerHTML = '';
+    document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
+
+    // Use cached rounds if available, otherwise fetch and cache
+    const render = (allRounds) => {
         if (!allRounds || allRounds.length === 0) {
             recentRoundsContainer.innerHTML = '<div class="card p-5 text-center text-gray-500">No rounds found.</div>';
             return;
         }
-        // Cache rounds by id for later lookups (course_id, course/tee names, etc.)
-        try {
-            window.allRoundsCache = allRounds;
-            window.roundById = allRounds.reduce((acc, r) => {
-                acc[r.round_id] = r;
-                return acc;
-            }, {});
-            console.log('DEBUG: Cached rounds metadata:', window.roundById);
-        } catch (e) {
-            console.warn('DEBUG: Failed to cache allRounds', e);
-        }
+        window.allRoundsCache = allRounds;
+        window.roundById = allRounds.reduce((acc, r) => {
+            acc[r.round_id] = r;
+            return acc;
+        }, {});
         const selectorDiv = document.createElement('div');
         selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
         allRounds.forEach(round => {
@@ -252,23 +248,35 @@ function renderRoundSelector(rounds) {
             const tee = round.Tees || {};
             const btn = document.createElement('button');
             btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
-            // Use the round_date directly from the Rounds table (allRounds query)
-            const correctDate = (() => {
-                const [year, month, day] = round.round_date.split('-');
-                return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-            })();
+            const [year, month, day] = round.round_date.split('-');
+            const correctDate = new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
             btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
-                renderRoundSelector();
+                // Only render details, do NOT call renderRoundSelector again
                 renderRoundDetails(round.round_id);
+                // Re-render buttons to update active state
+                renderRoundSelector(allRounds);
             };
             selectorDiv.appendChild(btn);
         });
         recentRoundsContainer.appendChild(selectorDiv);
-        // Only show a scorecard if a round is selected, and only from the tab click handler
+        // Remove any lingering round details
         document.querySelectorAll('#recentRoundsContainer #roundDetailsDiv').forEach(el => el.remove());
-    });
+        // If a round is selected, show its details
+        if (selectedRoundId) {
+            renderRoundDetails(selectedRoundId);
+        }
+    };
+
+    if (allRoundsCache) {
+        render(allRoundsCache);
+    } else {
+        fetchAllRounds().then(allRounds => {
+            allRoundsCache = allRounds;
+            render(allRounds);
+        });
+    }
 }
 
 async function renderRoundDetails(roundId) {
