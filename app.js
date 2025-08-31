@@ -573,4 +573,61 @@ async function renderRoundDetails(roundId) {
                         </tr></thead><tbody>`;
                         teamTotals.forEach(row => {
                             teamHtml += `<tr>
-       
+        <td class="px-4 py-2 font-semibold">${row.team}</td>
+        <td class="px-4 py-2 text-center font-bold">${row.team_net_total}</td>
+    </tr>`;
+                        });
+                        teamHtml += `</tbody></table></div>`;
+                    }
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team net totals: ${err.message}</div>`;
+                }
+            } else if (roundId === 1 || roundId === 2) {
+                // Hi-Lo logic for Rounds 1 and 2
+                const hiloResults = {};
+                allPlayersData.forEach(player => {
+                    const matchup = window.hiloMatchups.find(m => m.player_id === player.player_id);
+                    if (matchup) {
+                        hiloResults[player.player_id] = {
+                            name: player.name,
+                            team: matchup.team,
+                            score: matchup.final_score
+                        };
+                    }
+                });
+                // Sort by team, then by score
+                const sortedResults = Object.values(hiloResults).sort((a, b) => {
+                    if (a.team === b.team) {
+                        return (a.score || 0) - (b.score || 0);
+                    }
+                    return a.team.localeCompare(b.team);
+                });
+                // Group by team
+                const teams = {};
+                sortedResults.forEach(result => {
+                    if (!teams[result.team]) {
+                        teams[result.team] = [];
+                    }
+                    teams[result.team].push(result);
+                });
+                // Render
+                for (const [teamName, members] of Object.entries(teams)) {
+                    teamHtml += `<div class="font-semibold text-gray-900">${teamName}</div>`;
+                    members.forEach(member => {
+                        teamHtml += `<div class="flex justify-between px-4 py-2 border-b">
+        <span>${member.name}</span>
+        <span class="font-bold">${member.score !== null && member.score !== undefined ? member.score : '-'}</span>
+    </div>`;
+                    });
+                }
+                teamHtml += `<div class="text-gray-500 italic">Hi-Lo results for Rounds 1 & 2 not implemented here.</div></div>`;
+            } else {
+                teamHtml += `<div class="text-gray-500 italic">No team game for this round.</div></div>`;
+            }
+            container.innerHTML += teamHtml;
+        }
+
+        // Call the function to render tables initially
+        renderScorecardTables();
+    }
+    // ...end of renderRoundDetails...
