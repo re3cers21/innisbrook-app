@@ -1044,3 +1044,60 @@ function getInitials(pid) {
     if (!p) return '';
     return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
 }
+
+async function renderGrossLeaderboard() {
+    const leaderboardContainer = document.getElementById('leaderboard-gross');
+    leaderboardContainer.innerHTML = '<div class="loader"></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('Scores')
+            .select('player_id, Players(name)')
+            .in('round_id', [1,2,3,4,5]);
+        if (error) throw error;
+
+        // Aggregate gross scores per player
+        const playerGross = {};
+        data.forEach(row => {
+            const pid = row.player_id;
+            const name = row.Players.name;
+            if (!playerGross[pid]) playerGross[pid] = { name, total: 0, count: 0 };
+            playerGross[pid].total += row.gross_strokes;
+            playerGross[pid].count += 1;
+        });
+
+        // Convert to array and sort by total gross
+        const leaderboard = Object.entries(playerGross)
+            .map(([pid, v]) => ({ player_id: pid, name: v.name, total_gross: v.total, rounds: v.count }))
+            .sort((a, b) => a.total_gross - b.total_gross);
+
+        // Render table
+        let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left font-bold">Rank</th>
+                    <th class="px-4 py-2 text-left font-bold">Player</th>
+                    <th class="px-4 py-2 text-center font-bold">Total Gross</th>
+                    <th class="px-4 py-2 text-center font-bold">Rounds</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        leaderboard.forEach((row, idx) => {
+            html += `<tr>
+                <td class="px-4 py-2">${idx + 1}</td>
+                <td class="px-4 py-2">${row.name}</td>
+                <td class="px-4 py-2 text-center font-bold">${row.total_gross}</td>
+                <td class="px-4 py-2 text-center">${row.rounds}</td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        leaderboardContainer.innerHTML = html;
+    } catch (err) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading gross leaderboard: ${err.message}</div>`;
+    }
+}
+
+document.getElementById('leaderboard-tab-gross').addEventListener('click', () => {
+    showLeaderboardTab('gross');
+    renderGrossLeaderboard();
+});
