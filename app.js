@@ -704,7 +704,8 @@ async function renderRoundDetails(roundId) {
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
-            } else {
+            } else if (roundId !== 3 && roundId !== 4) {
+                // Only show "Coming soon" for rounds other than 1, 2, 3, 4
                 teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
             }
             teamHtml += `</div>`;
