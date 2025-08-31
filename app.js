@@ -226,7 +226,7 @@ async function fetchPlayers() {
 
 
 function renderRoundSelector(rounds) {
-    recentRoundsContainer.innerHTML = '';
+    recentRoundsContainer.innerHTML = ''; // <-- Add this line to clear previous content
     // Use live rounds from DB if available
     fetchAllRounds().then(allRounds => {
         if (!allRounds || allRounds.length === 0) {
