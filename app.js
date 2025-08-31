@@ -414,7 +414,15 @@ async function renderRoundDetails(roundId) {
     html += `<div class="flex gap-4 mb-4">`;
     scorecardTypes.forEach(type => {
         const checked = window.scorecardTypeState[roundId][type.key] ? 'checked' : '';
-        html += `<label class="inline-flex items-center cursor-pointer"><input type="checkbox" class="scorecard-type-toggle" data-type="${type.key}" ${checked}><span class="ml-2 font-semibold">${type.label}</span></label>`;
+        html += `
+  <label class="inline-flex items-center cursor-pointer mr-4">
+    <span class="switch">
+      <input type="checkbox" class="scorecard-type-toggle" data-type="${type.key}" ${checked}>
+      <span class="slider"></span>
+    </span>
+    <span class="ml-3 font-semibold">${type.label}</span>
+  </label>
+`;
     });
     html += `</div>`;
     html += `<div id="scorecardTables"></div>`;
