@@ -598,10 +598,12 @@ async function renderRoundDetails(roundId) {
             </table>
         </div>`;
                 container.innerHTML += teamHtml;
-                return; // Do not render any other team game content for round 5
+            } else {
+                // ...existing Team Game logic for other rounds (Hi-Lo, Singles, etc.)...
+                // For example:
+                teamHtml += `<div class="text-gray-500 italic">Team Game results for this round coming soon.</div></div>`;
+                container.innerHTML += teamHtml;
             }
-            // Only show Hi-Lo or "Coming soon" for other rounds as before
-            // (leave your existing logic here)
         }
         // ...rest of renderScorecardTables...
     }
