@@ -1049,36 +1049,80 @@ async function renderGrossLeaderboard() {
     const leaderboardContainer = document.getElementById('leaderboard-gross');
     leaderboardContainer.innerHTML = '<div class="loader"></div>';
 
-    try {
-        const { data, error } = await supabase
-            .from('Scores')
-            .select('player_id, Players(name)')
-            .in('round_id', [1,2,3,4,5]);
-        if (error) throw error;
+    // Fetch all players
+    const { data: players, error: playerError } = await supabase.from('Players').select('player_id, name');
+    if (playerError) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading players: ${playerError.message}</div>`;
+        return;
+    }
 
-        // Aggregate gross scores per player
-        const playerGross = {};
-        data.forEach(row => {
-            const pid = row.player_id;
-            const name = row.Players.name;
-            if (!playerGross[pid]) playerGross[pid] = { name, total: 0, count: 0 };
-            playerGross[pid].total += row.gross_strokes;
-            playerGross[pid].count += 1;
+    // Fetch all gross scores for rounds 1-5
+    const { data: scores, error: scoreError } = await supabase
+        .from('Scores')
+        .select('player_id, round_id, gross_strokes');
+    if (scoreError) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading scores: ${scoreError.message}</div>`;
+        return;
+    }
+
+    // Fetch par for each round
+    const { data: rounds, error: roundError } = await supabase
+        .from('Rounds')
+        .select('round_id, total_par');
+    if (roundError) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading rounds: ${roundError.message}</div>`;
+        return;
+    }
+    const parByRound = {};
+    rounds.forEach(r => { parByRound[r.round_id] = r.total_par; });
+
+    // Build leaderboard data
+    const leaderboard = players.map(player => {
+        let row = {
+            player_id: player.player_id,
+            name: player.name,
+            rounds: [],
+            total: 0,
+            overPar: 0
+        };
+        let playedRounds = 0;
+        for (let r = 1; r <= 5; r++) {
+            const scoreObj = scores.find(s => s.player_id === player.player_id && s.round_id === r);
+            const gross = scoreObj ? Number(scoreObj.gross_strokes) : null;
+            row.rounds.push(gross);
+            if (gross !== null) {
+                row.total += gross;
+                row.overPar += gross - (parByRound[r] || 0);
+                playedRounds++;
+            }
+        }
+        row.playedRounds = playedRounds;
+        return row;
+    });
+
+    // Default sort: by total gross ascending
+    let sortCol = 'total', sortDir = 1;
+    function sortAndRender() {
+        leaderboard.sort((a, b) => {
+            if (sortCol === 'name') {
+                return a.name.localeCompare(b.name) * sortDir;
+            } else {
+                return (a[sortCol] - b[sortCol]) * sortDir;
+            }
         });
 
-        // Convert to array and sort by total gross
-        const leaderboard = Object.entries(playerGross)
-            .map(([pid, v]) => ({ player_id: pid, name: v.name, total_gross: v.total, rounds: v.count }))
-            .sort((a, b) => a.total_gross - b.total_gross);
-
-        // Render table
         let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
             <thead>
                 <tr>
                     <th class="px-4 py-2 text-left font-bold">Rank</th>
                     <th class="px-4 py-2 text-left font-bold">Player</th>
+                    <th class="px-4 py-2 text-center font-bold">R1</th>
+                    <th class="px-4 py-2 text-center font-bold">R2</th>
+                    <th class="px-4 py-2 text-center font-bold">R3</th>
+                    <th class="px-4 py-2 text-center font-bold">R4</th>
+                    <th class="px-4 py-2 text-center font-bold">R5</th>
                     <th class="px-4 py-2 text-center font-bold">Total Gross</th>
-                    <th class="px-4 py-2 text-center font-bold">Rounds</th>
+                    <th class="px-4 py-2 text-center font-bold">Over Par</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -1086,15 +1130,23 @@ async function renderGrossLeaderboard() {
             html += `<tr>
                 <td class="px-4 py-2">${idx + 1}</td>
                 <td class="px-4 py-2">${row.name}</td>
-                <td class="px-4 py-2 text-center font-bold">${row.total_gross}</td>
-                <td class="px-4 py-2 text-center">${row.rounds}</td>
+                ${row.rounds.map(g => `<td class="px-4 py-2 text-center">${g !== null ? g : '-'}</td>`).join('')}
+                <td class="px-4 py-2 text-center font-bold">${row.total || '-'}</td>
+                <td class="px-4 py-2 text-center">${row.overPar > 0 ? '+' : ''}${row.overPar}</td>
             </tr>`;
         });
         html += `</tbody></table>`;
         leaderboardContainer.innerHTML = html;
-    } catch (err) {
-        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading gross leaderboard: ${err.message}</div>`;
     }
+
+    // Expose sort function globally for onclick
+    window.sortGrossLeaderboard = function(col) {
+        if (sortCol === col) sortDir *= -1;
+        else { sortCol = col; sortDir = 1; }
+        sortAndRender();
+    };
+
+    sortAndRender();
 }
 
 document.getElementById('leaderboard-tab-gross').addEventListener('click', () => {
