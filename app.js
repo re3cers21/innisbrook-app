@@ -558,7 +558,74 @@ async function renderRoundDetails(roundId) {
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             if (roundId === 1 || roundId === 2) {
-                // ...existing code for rounds 1 and 2...
+                // Hi-Lo Team Game for Rounds 1 and 2
+                const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
+                try {
+                    const { data: hiloData, error: hiloError } = await supabase
+                        .from(hiloView)
+                        .select('*');
+                    if (hiloError) throw hiloError;
+                    if (!hiloData || hiloData.length === 0) {
+                        teamHtml += `<div class="text-gray-500 italic">No Hi-Lo team game data available for this round.</div>`;
+                    } else {
+                        // Group by match_number
+                        const matches = {};
+                        hiloData.forEach(row => {
+                            if (!matches[row.match_number]) matches[row.match_number] = [];
+                            matches[row.match_number].push(row);
+                        });
+                        Object.keys(matches).forEach(matchNum => {
+                            const match = matches[matchNum];
+                            const firstRow = match[0];
+                            // Team names
+                            const team1 = firstRow.team1;
+                            const team2 = firstRow.team2;
+                            // Determine match winner by last running score
+                            let matchWinner = '';
+                            if (match.length > 0) {
+                                const lastRow = match[match.length - 1];
+                                if (lastRow.team1_running > lastRow.team2_running) matchWinner = team1;
+                                else if (lastRow.team2_running > lastRow.team1_running) matchWinner = team2;
+                            }
+                            teamHtml += `<div class="mb-6 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                            teamHtml += `<div class="flex items-center justify-between mb-2">`;
+                            teamHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="text-emerald-700">${team1}</span> vs <span class="text-blue-700">${team2}</span></h5>`;
+                            if (matchWinner) {
+                                teamHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                            }
+                            teamHtml += `</div>`;
+                            // Table
+                            teamHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                            teamHtml += `<thead class="bg-gray-50"><tr>
+                                <th class="px-2 py-1">Hole</th>
+                                <th class="px-2 py-1">${team1} Low</th>
+                                <th class="px-2 py-1">${team1} High</th>
+                                <th class="px-2 py-1">${team2} Low</th>
+                                <th class="px-2 py-1">${team2} High</th>
+                                <th class="px-2 py-1">${team1} Holes</th>
+                                <th class="px-2 py-1">${team2} Holes</th>
+                                <th class="px-2 py-1">${team1} Running</th>
+                                <th class="px-2 py-1">${team2} Running</th>
+                            </tr></thead><tbody>`;
+                            match.forEach(row => {
+                                teamHtml += `<tr>
+                                    <td class="text-center">${row.hole_id}</td>
+                                    <td class="text-center">${row.team1_low}</td>
+                                    <td class="text-center">${row.team1_high}</td>
+                                    <td class="text-center">${row.team2_low}</td>
+                                    <td class="text-center">${row.team2_high}</td>
+                                    <td class="text-center">${row.team1_hole_result}</td>
+                                    <td class="text-center">${row.team2_hole_result}</td>
+                                    <td class="text-center">${row.team1_running}</td>
+                                    <td class="text-center">${row.team2_running}</td>
+                                </tr>`;
+                            });
+                            teamHtml += `</tbody></table></div></div>`;
+                        });
+                    }
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading Hi-Lo team game data: ${err.message}</div>`;
+                }
             } else if (roundId === 5) {
                 // Round 5: Team Net Totals
                 try {
