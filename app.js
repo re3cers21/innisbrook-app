@@ -677,4 +677,25 @@ async function renderRoundDetails(roundId) {
 
 document.addEventListener('DOMContentLoaded', () => {
     fetchPlayers();
+
+    // Main tab navigation
+    document.getElementById('tab-players').addEventListener('click', () => {
+        showView('players');
+        showPlayersSubView('all-players');
+    });
+    document.getElementById('tab-dashboard').addEventListener('click', () => {
+        showView('dashboard');
+        fetchRecentRounds();
+    });
+    document.getElementById('tab-leaderboard').addEventListener('click', () => {
+        showView('leaderboard');
+    });
+
+    // Subtab navigation for Players
+    document.getElementById('subtab-all-players').addEventListener('click', () => {
+        showPlayersSubView('all-players');
+    });
+    document.getElementById('subtab-teams').addEventListener('click', () => {
+        showPlayersSubView('teams');
+    });
 });
