@@ -969,6 +969,11 @@ function showPlayerProfile(playerId) {
     renderPlayerRoundsTab(playerId);
 }
 
+function renderPlayerRoundsTab(playerId) {
+    const roundsDiv = document.getElementById('player-tab-content-rounds');
+    roundsDiv.innerHTML = '<div class="text-gray-500 italic">Player rounds will be displayed here.</div>';
+}
+
 // 3. Event delegation for clickable player names (already present in your code)
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('clickable-player')) {
