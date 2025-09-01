@@ -1456,9 +1456,17 @@ async function renderPayoutsGamesPage() {
     // Fetch all players on the winning team
     const winningTeamPlayers = buyins.filter(b => b.team === winningTeam);
 
-    // Payout rules
-    const CTP_PAYOUT = 25; // per round
-    const FIRST_BIRDIE_PAYOUT = 25; // per round
+    // Fetch buy-in counts for CTP and First Birdie
+    const { data: buyinCounts, error: buyinCountsError } = await supabase
+        .from('event_buyin_counts')
+        .select('*')
+        .single();
+    if (buyinCountsError) {
+        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading event buy-in counts: ${buyinCountsError.message}</div>`;
+        return;
+    }
+    const CTP_PAYOUT = buyinCounts.ctp_count * 5;
+    const FIRST_BIRDIE_PAYOUT = buyinCounts.first_birdie_count * 5;
     const NET_CHAMP_PAYOUT = 180;
     const TEAM_GAME_PAYOUT = 170; // per player
 
@@ -1472,7 +1480,7 @@ async function renderPayoutsGamesPage() {
         };
     });
 
-    // Add CTP and First Birdie winnings
+    // Add CTP and First Birdie winnings (use dynamic payout)
     winners.forEach(w => {
         if (!w.player_id) return;
         if (!earnings[w.player_id]) return;
@@ -1506,13 +1514,17 @@ async function renderPayoutsGamesPage() {
         if (!grouped[w.round_id]) grouped[w.round_id] = [];
         grouped[w.round_id].push(w);
     });
-    winnersHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Round</th><th>Event</th><th>Winner</th></tr></thead><tbody>`;
+    winnersHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Round</th><th>Event</th><th>Winner</th><th>Payout</th></tr></thead><tbody>`;
     Object.keys(grouped).forEach(round_id => {
         grouped[round_id].forEach(w => {
+            let payout = '';
+            if (w.event_type === 'ctp') payout = `$${CTP_PAYOUT}`;
+            if (w.event_type === 'first_birdie') payout = `$${FIRST_BIRDIE_PAYOUT}`;
             winnersHtml += `<tr>
                 <td class="px-4 py-2 text-center">${w.round_id}</td>
                 <td class="px-4 py-2 text-center">${w.event_type === 'ctp' ? 'Closest to the Pin' : 'First Birdie'}</td>
                 <td class="px-4 py-2 text-center">${w.winner_name || '-'}</td>
+                <td class="px-4 py-2 text-center">${w.winner_name ? payout : '-'}</td>
             </tr>`;
         });
     });
@@ -1524,6 +1536,7 @@ async function renderPayoutsGamesPage() {
         <div class="mb-2"><strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})</div>
         <div><strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})</div>
         <div class="ml-4">${winningTeamPlayers.map(p => p.name).join(', ')}</div>
+        <div class="mt-4 text-sm text-gray-600">CTP and First Birdie payout per round: $5 x number of buy-ins (CTP: ${buyinCounts.ctp_count}, First Birdie: ${buyinCounts.first_birdie_count})</div>
     </div>`;
 
     // Build HTML for earnings leaderboard
@@ -1547,12 +1560,3 @@ document.getElementById('tab-money').addEventListener('click', () => {
     showView('money');
     renderPayoutsGamesPage();
 });
-
-// Fetch buy-in counts
-const { data: buyinCounts, error } = await supabase
-  .from('event_buyin_counts')
-  .select('*')
-  .single();
-
-const ctpPayout = buyinCounts.ctp_count * 5;
-const firstBirdiePayout = buyinCounts.first_birdie_count * 5;
