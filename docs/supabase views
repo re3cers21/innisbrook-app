@@ -349,3 +349,238 @@ from
   left join round_pars rp5 on rp5.round_id = 5
 order by
   pg.total_gross asc;
+
+
+
+  create or replace view net_leaderboard_detailed as
+with round_pars as (
+  select r.round_id, c.total_par
+  from "Rounds" r
+  join "Courses" c on r.course_id = c.course_id
+  where r.round_id in (1,2,3,4,5)
+),
+player_net as (
+  select
+    p.player_id,
+    p.name,
+    sum(case when ds.round_id = 1 then ds.net_strokes else 0 end) as net_r1,
+    sum(case when ds.round_id = 2 then ds.net_strokes else 0 end) as net_r2,
+    sum(case when ds.round_id = 3 then ds.net_strokes else 0 end) as net_r3,
+    sum(case when ds.round_id = 4 then ds.net_strokes else 0 end) as net_r4,
+    sum(case when ds.round_id = 5 then ds.net_strokes else 0 end) as net_r5,
+    sum(ds.net_strokes) as total_net
+  from
+    detailed_scores ds
+    join "Players" p on ds.player_id = p.player_id
+  where
+    ds.round_id in (1,2,3,4,5)
+  group by
+    p.player_id, p.name
+)
+select
+  pn.player_id,
+  pn.name,
+  pn.net_r1,
+  pn.net_r2,
+  pn.net_r3,
+  pn.net_r4,
+  pn.net_r5,
+  rp1.total_par as par_r1,
+  rp2.total_par as par_r2,
+  rp3.total_par as par_r3,
+  rp4.total_par as par_r4,
+  rp5.total_par as par_r5,
+  (pn.net_r1 - rp1.total_par) as to_par_r1,
+  (pn.net_r2 - rp2.total_par) as to_par_r2,
+  (pn.net_r3 - rp3.total_par) as to_par_r3,
+  (pn.net_r4 - rp4.total_par) as to_par_r4,
+  (pn.net_r5 - rp5.total_par) as to_par_r5,
+  pn.total_net,
+  (coalesce(pn.net_r1,0) + coalesce(pn.net_r2,0) + coalesce(pn.net_r3,0) + coalesce(pn.net_r4,0) + coalesce(pn.net_r5,0))
+    - (coalesce(rp1.total_par,0) + coalesce(rp2.total_par,0) + coalesce(rp3.total_par,0) + coalesce(rp4.total_par,0) + coalesce(rp5.total_par,0))
+    as total_to_par
+from
+  player_net pn
+  left join round_pars rp1 on rp1.round_id = 1
+  left join round_pars rp2 on rp2.round_id = 2
+  left join round_pars rp3 on rp3.round_id = 3
+  left join round_pars rp4 on rp4.round_id = 4
+  left join round_pars rp5 on rp5.round_id = 5
+order by
+  pn.total_net asc;
+
+
+  create or replace view team_leaderboard_detailed as
+with
+-- Rounds 1 & 2: Hi-Lo team matches
+r1_matches as (
+  select
+    match_number,
+    team1,
+    team2,
+    team1_running,
+    team2_running
+  from (
+    select *,
+      row_number() over (partition by match_number order by hole_id desc) as rn
+    from hilo_results_round1
+  ) x
+  where rn = 1
+),
+r2_matches as (
+  select
+    match_number,
+    team1,
+    team2,
+    team1_running,
+    team2_running
+  from (
+    select *,
+      row_number() over (partition by match_number order by hole_id desc) as rn
+    from hilo_results_round2
+  ) x
+  where rn = 1
+),
+-- Rounds 3 & 4: Singles matchplay
+r3_matches as (
+  select
+    match_number,
+    team1,
+    team2,
+    -- Each match is a single row, winner by final running
+    case
+      when last_row.running > 0 then 1
+      when last_row.running < 0 then 0
+      else 0.5
+    end as team1_points,
+    case
+      when last_row.running < 0 then 1
+      when last_row.running > 0 then 0
+      else 0.5
+    end as team2_points
+  from (
+    select *,
+      row_number() over (partition by match_number order by hole_id desc) as rn
+    from singles_results_round3
+  ) last_row
+  where rn = 1
+),
+r4_matches as (
+  select
+    match_number,
+    team1,
+    team2,
+    case
+      when last_row.running > 0 then 1
+      when last_row.running < 0 then 0
+      else 0.5
+    end as team1_points,
+    case
+      when last_row.running < 0 then 1
+      when last_row.running > 0 then 0
+      else 0.5
+    end as team2_points
+  from (
+    select *,
+      row_number() over (partition by match_number order by hole_id desc) as rn
+    from singles_results_round4
+  ) last_row
+  where rn = 1
+),
+-- Round 5: Tiebreaker (lowest net wins 1 point, tie = 0.5)
+r5_match as (
+  select
+    team,
+    team_net_total,
+    rank() over (order by team_net_total asc) as rnk
+  from team_net_totals_round5
+),
+r5_points as (
+  select
+    team,
+    case
+      when count(*) = 2 and min(team_net_total) = max(team_net_total) then 0.5 -- tie
+      when rnk = 1 then 1
+      else 0
+    end as points
+  from r5_match
+  group by team, rnk, team_net_total
+),
+-- Points per round per team
+r1_team_points as (
+  select team1 as team, sum(
+    case
+      when team1_running > team2_running then 1
+      when team1_running < team2_running then 0
+      else 0.5
+    end
+  ) as points
+  from r1_matches group by team1
+  union all
+  select team2 as team, sum(
+    case
+      when team2_running > team1_running then 1
+      when team2_running < team1_running then 0
+      else 0.5
+    end
+  ) as points
+  from r1_matches group by team2
+),
+r2_team_points as (
+  select team1 as team, sum(
+    case
+      when team1_running > team2_running then 1
+      when team1_running < team2_running then 0
+      else 0.5
+    end
+  ) as points
+  from r2_matches group by team1
+  union all
+  select team2 as team, sum(
+    case
+      when team2_running > team1_running then 1
+      when team2_running < team1_running then 0
+      else 0.5
+    end
+  ) as points
+  from r2_matches group by team2
+),
+r3_team_points as (
+  select team1 as team, sum(team1_points) as points from r3_matches group by team1
+  union all
+  select team2 as team, sum(team2_points) as points from r3_matches group by team2
+),
+r4_team_points as (
+  select team1 as team, sum(team1_points) as points from r4_matches group by team1
+  union all
+  select team2 as team, sum(team2_points) as points from r4_matches group by team2
+),
+r5_team_points as (
+  select team, points from r5_points
+),
+all_teams as (
+  select team from r1_team_points
+  union
+  select team from r2_team_points
+  union
+  select team from r3_team_points
+  union
+  select team from r4_team_points
+  union
+  select team from r5_team_points
+)
+select
+  t.team,
+  coalesce(r1.points, 0) as points_r1,
+  coalesce(r2.points, 0) as points_r2,
+  coalesce(r3.points, 0) as points_r3,
+  coalesce(r4.points, 0) as points_r4,
+  coalesce(r5.points, 0) as points_r5,
+  coalesce(r1.points, 0) + coalesce(r2.points, 0) + coalesce(r3.points, 0) + coalesce(r4.points, 0) + coalesce(r5.points, 0) as total_points
+from all_teams t
+left join r1_team_points r1 on t.team = r1.team
+left join r2_team_points r2 on t.team = r2.team
+left join r3_team_points r3 on t.team = r3.team
+left join r4_team_points r4 on t.team = r4.team
+left join r5_team_points r5 on t.team = r5.team
+order by total_points desc;

@@ -1273,3 +1273,84 @@ document.getElementById('leaderboard-tab-net').addEventListener('click', () => {
     showLeaderboardTab('net');
     renderNetLeaderboard();
 });
+
+let teamLeaderboardSortCol = 'total_points';
+let teamLeaderboardSortDir = -1; // Descending by default
+
+async function renderTeamLeaderboard() {
+    const leaderboardContainer = document.getElementById('leaderboard-team');
+    leaderboardContainer.innerHTML = '<div class="loader"></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('team_leaderboard_detailed')
+            .select('*');
+        if (error) throw error;
+
+        window.teamLeaderboardData = data;
+
+        function sortAndRender() {
+            const sorted = [...window.teamLeaderboardData].sort((a, b) => {
+                let aVal = a[teamLeaderboardSortCol];
+                let bVal = b[teamLeaderboardSortCol];
+                if (teamLeaderboardSortCol === 'team') {
+                    return aVal.localeCompare(bVal) * teamLeaderboardSortDir;
+                }
+                return (aVal - bVal) * teamLeaderboardSortDir;
+            });
+
+            function sortIcon(col) {
+                if (teamLeaderboardSortCol !== col) return '';
+                return teamLeaderboardSortDir === 1 ? ' ▲' : ' ▼';
+            }
+
+            let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left font-bold cursor-pointer" onclick="sortTeamLeaderboard('team')">Team${sortIcon('team')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('points_r1')">R1${sortIcon('points_r1')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('points_r2')">R2${sortIcon('points_r2')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('points_r3')">R3${sortIcon('points_r3')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('points_r4')">R4${sortIcon('points_r4')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('points_r5')">R5${sortIcon('points_r5')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortTeamLeaderboard('total_points')">Total${sortIcon('total_points')}</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            sorted.forEach(row => {
+                html += `<tr>
+                    <td class="px-4 py-2 font-bold">${row.team}</td>
+                    <td class="px-4 py-2 text-center">${row.points_r1 ?? '-'}</td>
+                    <td class="px-4 py-2 text-center">${row.points_r2 ?? '-'}</td>
+                    <td class="px-4 py-2 text-center">${row.points_r3 ?? '-'}</td>
+                    <td class="px-4 py-2 text-center">${row.points_r4 ?? '-'}</td>
+                    <td class="px-4 py-2 text-center">${row.points_r5 ?? '-'}</td>
+                    <td class="px-4 py-2 text-center font-bold">${row.total_points ?? '-'}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            leaderboardContainer.innerHTML = html;
+        }
+
+        window.sortTeamLeaderboard = function(col) {
+            if (teamLeaderboardSortCol === col) {
+                teamLeaderboardSortDir *= -1;
+            } else {
+                teamLeaderboardSortCol = col;
+                teamLeaderboardSortDir = 1;
+            }
+            sortAndRender();
+        };
+
+        sortAndRender();
+    } catch (err) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading team leaderboard: ${err.message}</div>`;
+    }
+}
+
+document.getElementById('leaderboard-tab-team').addEventListener('click', () => {
+    showLeaderboardTab('team');
+    renderTeamLeaderboard();
+});
