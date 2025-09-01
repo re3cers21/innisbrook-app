@@ -970,6 +970,7 @@ function showPlayerProfile(playerId) {
             if (tab === 'handicaps') renderPlayerHandicapsTab(playerId);
             if (tab === 'earnings') renderPlayerEarningsTab(playerId);
             if (tab === 'rounds') renderPlayerRoundsTab(playerId);
+            if (tab === 'compare') renderPlayerCompareTab(playerId);
         });
     });
 
@@ -1828,6 +1829,171 @@ async function renderPlayerEarningsTab(playerId) {
         `}
         <div class="mt-4 text-lg font-bold">Total Earnings: <span class="text-emerald-700 text-2xl">$${total}</span></div>
     `;
+}
+
+async function renderPlayerCompareTab(playerId) {
+    const compareDiv = document.getElementById('player-tab-content-compare');
+    compareDiv.innerHTML = '<div class="loader"></div>';
+
+    // Fetch all rounds and all players
+    const [{ data: rounds, error: roundsError }, { data: players, error: playersError }] = await Promise.all([
+        supabase.from('Rounds').select('round_id, round_number, round_date, Courses (course_name)').order('round_number'),
+        supabase.from('Players').select('player_id, name, team').order('name')
+    ]);
+    if (roundsError || playersError) {
+        compareDiv.innerHTML = `<div class="text-red-500 italic">Error loading rounds or players.</div>`;
+        return;
+    }
+
+    // Initial state
+    let selectedRoundId = rounds[0]?.round_id;
+    let selectedScoreType = 'gross';
+    let selectedPlayerIds = [playerId];
+
+    function render() {
+        // Player selector options (exclude already selected)
+        const availablePlayers = players.filter(p => !selectedPlayerIds.includes(p.player_id));
+        compareDiv.innerHTML = `
+            <h3 class="text-xl font-bold mb-4">Compare Scores</h3>
+            <div class="flex flex-wrap gap-4 mb-4 items-end">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Round</label>
+                    <select id="compareRoundSelect" class="border rounded px-3 py-2">
+                        ${rounds.map(r => `<option value="${r.round_id}" ${r.round_id === selectedRoundId ? 'selected' : ''}>Round ${r.round_number} - ${r.Courses?.course_name || ''} (${r.round_date})</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Score Type</label>
+                    <select id="compareScoreType" class="border rounded px-3 py-2">
+                        <option value="gross" ${selectedScoreType === 'gross' ? 'selected' : ''}>Gross</option>
+                        <option value="net" ${selectedScoreType === 'net' ? 'selected' : ''}>Net</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Add Player</label>
+                    <select id="compareAddPlayer" class="border rounded px-3 py-2">
+                        <option value="">Select...</option>
+                        ${availablePlayers.map(p => `<option value="${p.player_id}">${p.name} (${p.team})</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="mb-2">
+                <span class="font-semibold">Comparing:</span>
+                ${selectedPlayerIds.map(pid => {
+                    const p = players.find(pl => pl.player_id == pid);
+                    return `<span class="inline-flex items-center bg-emerald-100 text-emerald-700 rounded px-2 py-1 mr-2 mb-1">${p ? p.name : pid} <button class="ml-2 text-red-500 remove-compare-player" data-pid="${pid}" title="Remove">&times;</button></span>`;
+                }).join('')}
+            </div>
+            <div id="compareTableContainer" class="mt-4"></div>
+        `;
+
+        // Event listeners
+        compareDiv.querySelector('#compareRoundSelect').addEventListener('change', e => {
+            selectedRoundId = Number(e.target.value);
+            render();
+        });
+        compareDiv.querySelector('#compareScoreType').addEventListener('change', e => {
+            selectedScoreType = e.target.value;
+            render();
+        });
+        compareDiv.querySelector('#compareAddPlayer').addEventListener('change', e => {
+            const pid = Number(e.target.value);
+            if (pid && !selectedPlayerIds.includes(pid)) {
+                selectedPlayerIds.push(pid);
+                render();
+            }
+        });
+        compareDiv.querySelectorAll('.remove-compare-player').forEach(btn => {
+            btn.addEventListener('click', e => {
+                const pid = Number(btn.dataset.pid);
+                // Prevent removing the current player
+                if (pid !== playerId) {
+                    selectedPlayerIds = selectedPlayerIds.filter(id => id !== pid);
+                    render();
+                }
+            });
+        });
+
+        // Fetch and render the comparison table
+        renderCompareTable();
+    }
+
+    async function renderCompareTable() {
+        const tableDiv = compareDiv.querySelector('#compareTableContainer');
+        tableDiv.innerHTML = '<div class="loader"></div>';
+
+        // Fetch holes for the selected round
+        const { data: round, error: roundError } = await supabase
+            .from('Rounds')
+            .select('course_id')
+            .eq('round_id', selectedRoundId)
+            .single();
+        if (roundError || !round) {
+            tableDiv.innerHTML = `<div class="text-red-500 italic">Error loading round info.</div>`;
+            return;
+        }
+        const { data: holes, error: holesError } = await supabase
+            .from('Holes')
+            .select('hole_id, hole_number, hole_par')
+            .eq('course_id', round.course_id)
+            .order('hole_number');
+        if (holesError) {
+            tableDiv.innerHTML = `<div class="text-red-500 italic">Error loading holes.</div>`;
+            return;
+        }
+
+        // Fetch detailed scores for all selected players for this round
+        const { data: scores, error: scoresError } = await supabase
+            .from('detailed_scores')
+            .select('player_id, hole_id, gross_strokes, net_strokes')
+            .eq('round_id', selectedRoundId)
+            .in('player_id', selectedPlayerIds);
+        if (scoresError) {
+            tableDiv.innerHTML = `<div class="text-red-500 italic">Error loading scores.</div>`;
+            return;
+        }
+
+        // Build table
+        let html = `<table class="min-w-full text-xs md:text-sm scoreboard-table mb-2">
+            <thead>
+                <tr>
+                    <th class="px-2 py-1 text-left font-bold">Player</th>
+                    ${holes.map(h => `<th class="px-2 py-1 text-center font-bold">${h.hole_number}</th>`).join('')}
+                    <th class="px-2 py-1 text-center font-bold">Out</th>
+                    <th class="px-2 py-1 text-center font-bold">In</th>
+                    <th class="px-2 py-1 text-center font-bold">Total</th>
+                </tr>
+                <tr>
+                    <td class="text-xs text-gray-500 font-normal">Par</td>
+                    ${holes.map(h => `<td class="text-center text-gray-500">${h.hole_par}</td>`).join('')}
+                    <td colspan="3"></td>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+        selectedPlayerIds.forEach(pid => {
+            const p = players.find(pl => pl.player_id == pid);
+            html += `<tr>
+                <td class="font-semibold text-gray-900">${p ? p.name : pid}</td>`;
+            let out = 0, in9 = 0, total = 0;
+            holes.forEach((h, idx) => {
+                const s = scores.find(sc => sc.player_id == pid && sc.hole_id == h.hole_id);
+                const val = selectedScoreType === 'gross' ? s?.gross_strokes : s?.net_strokes;
+                html += `<td class="text-center">${val !== undefined && val !== null ? val : '-'}</td>`;
+                if (val !== undefined && val !== null) {
+                    total += Number(val);
+                    if (idx < 9) out += Number(val);
+                    else in9 += Number(val);
+                }
+            });
+            html += `<td class="text-center font-bold">${out || '-'}</td><td class="text-center font-bold">${in9 || '-'}</td><td class="text-center font-bold">${total || '-'}</td>`;
+            html += `</tr>`;
+        });
+        html += `</tbody></table>`;
+        tableDiv.innerHTML = html;
+    }
+
+    render();
 }
 
 
