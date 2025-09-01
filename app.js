@@ -969,9 +969,43 @@ function showPlayerProfile(playerId) {
     renderPlayerRoundsTab(playerId);
 }
 
-function renderPlayerRoundsTab(playerId) {
+async function renderPlayerRoundsTab(playerId) {
     const roundsDiv = document.getElementById('player-tab-content-rounds');
-    roundsDiv.innerHTML = '<div class="text-gray-500 italic">Player rounds will be displayed here.</div>';
+    roundsDiv.innerHTML = '<div class="loader"></div>';
+
+    // Fetch gross and net scores for this player
+    const [{ data: gross, error: grossError }, { data: net, error: netError }] = await Promise.all([
+        supabase.from('gross_leaderboard_detailed').select('*').eq('player_id', playerId),
+        supabase.from('net_leaderboard_detailed').select('*').eq('player_id', playerId)
+    ]);
+    if (grossError || netError) {
+        roundsDiv.innerHTML = `<div class="text-red-500 italic">Error loading scores.</div>`;
+        return;
+    }
+    const grossRow = gross && gross[0];
+    const netRow = net && net[0];
+
+    // Build Gross/Net Table
+    let html = `<h3 class="text-xl font-bold mb-4">Rounds Summary</h3>`;
+    html += `<table class="min-w-full text-sm scoreboard-table mb-6">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>Gross</th>
+                <th>Net</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    for (let i = 1; i <= 5; i++) {
+        html += `<tr>
+            <td class="px-4 py-2 text-center">Round ${i}</td>
+            <td class="px-4 py-2 text-center">${grossRow ? grossRow[`gross_r${i}`] : '-'}</td>
+            <td class="px-4 py-2 text-center">${netRow ? netRow[`net_r${i}`] : '-'}</td>
+        </tr>`;
+    }
+    html += `</tbody></table>`;
+
+    roundsDiv.innerHTML = html;
 }
 
 // 3. Event delegation for clickable player names (already present in your code)
@@ -1643,5 +1677,3 @@ async function renderPlayerHandicapsTab(playerId) {
     render();
 }
 
-// Call this after rendering the player card
-renderPlayerHandicapsTab(playerId);
