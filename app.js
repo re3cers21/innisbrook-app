@@ -1370,6 +1370,7 @@ document.getElementById('leaderboard-tab-net').addEventListener('click', () => {
 });
 
 let teamLeaderboardSortCol = 'total_points';
+
 let teamLeaderboardSortDir = -1; // Descending by default
 
 // Add this function near the top-level (after showPlayersSubView is defined)
