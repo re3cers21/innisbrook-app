@@ -973,37 +973,107 @@ async function renderPlayerRoundsTab(playerId) {
     const roundsDiv = document.getElementById('player-tab-content-rounds');
     roundsDiv.innerHTML = '<div class="loader"></div>';
 
-    // Fetch gross and net scores for this player
-    const [{ data: gross, error: grossError }, { data: net, error: netError }] = await Promise.all([
-        supabase.from('gross_leaderboard_detailed').select('*').eq('player_id', playerId),
-        supabase.from('net_leaderboard_detailed').select('*').eq('player_id', playerId)
-    ]);
-    if (grossError || netError) {
+    // Fetch all rounds
+    const { data: rounds, error: roundsError } = await supabase
+        .from('Rounds')
+        .select('round_id, round_date, round_number, course_id, tee_id, Courses (course_name), Tees (tee_name)')
+        .order('round_number', { ascending: true });
+    if (roundsError) {
+        roundsDiv.innerHTML = `<div class="text-red-500 italic">Error loading rounds.</div>`;
+        return;
+    }
+
+    // Fetch all holes
+    const { data: holes, error: holesError } = await supabase
+        .from('Holes')
+        .select('hole_id, hole_number, hole_par, hole_handicap, course_id')
+        .order('hole_number', { ascending: true });
+    if (holesError) {
+        roundsDiv.innerHTML = `<div class="text-red-500 italic">Error loading holes.</div>`;
+        return;
+    }
+
+    // Fetch all detailed scores for this player
+    const { data: scores, error: scoresError } = await supabase
+        .from('detailed_scores')
+        .select('round_id, hole_id, gross_strokes, net_strokes')
+        .eq('player_id', playerId);
+    if (scoresError) {
         roundsDiv.innerHTML = `<div class="text-red-500 italic">Error loading scores.</div>`;
         return;
     }
-    const grossRow = gross && gross[0];
-    const netRow = net && net[0];
 
-    // Build Gross/Net Table
-    let html = `<h3 class="text-xl font-bold mb-4">Rounds Summary</h3>`;
-    html += `<table class="min-w-full text-sm scoreboard-table mb-6">
-        <thead>
-            <tr>
-                <th>Round</th>
-                <th>Gross</th>
-                <th>Net</th>
-            </tr>
-        </thead>
-        <tbody>`;
-    for (let i = 1; i <= 5; i++) {
-        html += `<tr>
-            <td class="px-4 py-2 text-center">Round ${i}</td>
-            <td class="px-4 py-2 text-center">${grossRow ? grossRow[`gross_r${i}`] : '-'}</td>
-            <td class="px-4 py-2 text-center">${netRow ? netRow[`net_r${i}`] : '-'}</td>
-        </tr>`;
-    }
-    html += `</tbody></table>`;
+    // Group scores by round
+    const scoresByRound = {};
+    scores.forEach(s => {
+        if (!scoresByRound[s.round_id]) scoresByRound[s.round_id] = {};
+        scoresByRound[s.round_id][s.hole_id] = s;
+    });
+
+    let html = `<h3 class="text-xl font-bold mb-4">Full Scorecards</h3>`;
+
+    rounds.forEach(round => {
+        // Get holes for this course
+        const roundHoles = holes.filter(h => h.course_id === round.course_id);
+        // Sort by hole_number
+        roundHoles.sort((a, b) => a.hole_number - b.hole_number);
+
+        html += `<div class="mb-8 card p-4">
+            <div class="mb-2 font-semibold text-lg">${round.Courses?.course_name || ''} - ${round.Tees?.tee_name || ''} (Round ${round.round_number}, ${round.round_date})</div>
+            <div class="overflow-x-auto">
+            <table class="min-w-full text-xs md:text-sm scoreboard-table mb-2">
+                <thead>
+                    <tr>
+                        <th class="px-2 py-1 text-center">Hole</th>
+                        ${roundHoles.map(h => `<th class="px-2 py-1 text-center">${h.hole_number}</th>`).join('')}
+                        <th class="px-2 py-1 text-center">Out</th>
+                        <th class="px-2 py-1 text-center">In</th>
+                        <th class="px-2 py-1 text-center">Total</th>
+                    </tr>
+                    <tr>
+                        <td class="text-xs text-gray-500 font-normal">Par</td>
+                        ${roundHoles.map(h => `<td class="text-center text-gray-500">${h.hole_par}</td>`).join('')}
+                        <td colspan="3"></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-semibold text-gray-900">Gross</td>
+                        ${roundHoles.map((h, idx) => {
+                            const s = scoresByRound[round.round_id]?.[h.hole_id];
+                            return `<td class="text-center">${s ? s.gross_strokes : '-'}</td>`;
+                        }).join('')}
+                        <td class="text-center font-bold">${
+                            roundHoles.slice(0,9).reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.gross_strokes || 0), 0) || '-'
+                        }</td>
+                        <td class="text-center font-bold">${
+                            roundHoles.slice(9,18).reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.gross_strokes || 0), 0) || '-'
+                        }</td>
+                        <td class="text-center font-bold">${
+                            roundHoles.reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.gross_strokes || 0), 0) || '-'
+                        }</td>
+                    </tr>
+                    <tr>
+                        <td class="font-semibold text-gray-900">Net</td>
+                        ${roundHoles.map((h, idx) => {
+                            const s = scoresByRound[round.round_id]?.[h.hole_id];
+                            return `<td class="text-center">${s ? s.net_strokes : '-'}</td>`;
+                        }).join('')}
+                        <td class="text-center font-bold">${
+                            roundHoles.slice(0,9).reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.net_strokes || 0), 0) || '-'
+                        }</td>
+                        <td class="text-center font-bold">${
+                            roundHoles.slice(9,18).reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.net_strokes || 0), 0) || '-'
+                        }</td>
+                        <td class="text-center font-bold">${
+                            roundHoles.reduce((sum, h) => sum + (scoresByRound[round.round_id]?.[h.hole_id]?.net_strokes || 0), 0) || '-'
+                        }</td>
+                    </tr>
+                </tbody>
+            </table>
+            </div>
+        </div>`;
+    });
 
     roundsDiv.innerHTML = html;
 }
