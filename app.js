@@ -1564,7 +1564,19 @@ async function renderPayoutsGamesPage() {
         </div>
     </div>
 `;
-    leaderboardDiv.innerHTML = `<div class="text-gray-500 italic">Earnings leaderboard is under construction and will be available soon.</div>`;
+    // --- Render Earnings Leaderboard tab ---
+    let leaderboard = Object.values(earnings).sort((a, b) => b.total - a.total);
+    let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
+    earningsHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Player</th><th>Total Earnings</th><th>Details</th></tr></thead><tbody>`;
+    leaderboard.forEach(e => {
+        earningsHtml += `<tr>
+            <td class="px-4 py-2">${e.name}</td>
+            <td class="px-4 py-2 text-center font-bold">$${e.total}</td>
+            <td class="px-4 py-2">${e.details.join('<br>')}</td>
+        </tr>`;
+    });
+    earningsHtml += `</tbody></table>`;
+    leaderboardDiv.innerHTML = earningsHtml;
 }
 
 // Sub-tab switching logic
