@@ -977,6 +977,11 @@ function showPlayerProfile(playerId) {
 
     // Render default tab
     renderPlayerRoundsTab(playerId);
+
+    // Attach the event listener right after rendering the HTML
+    document.getElementById('playerHomeButton').addEventListener('click', () => {
+        window.location.reload();
+    });
 }
 
 async function renderPlayerRoundsTab(playerId) {
@@ -1827,8 +1832,4 @@ async function renderPlayerEarningsTab(playerId) {
     `;
 }
 
-// --- Function Calls ---
-document.getElementById('playerHomeButton').addEventListener('click', () => {
-    window.location.reload();
-});
 
