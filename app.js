@@ -1496,10 +1496,10 @@ async function renderPayoutsGamesPage() {
 
     summaryDiv.innerHTML = `
     <div class="mb-8">
-        <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
+        <h3 class="text-xl font-bold mb-4">Payout Details</h3>
         <div class="mb-4">
-            <strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})<br>
-            <strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})<br>
+            <strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion)<br>
+            <strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>
             <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
             <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
         </div>
