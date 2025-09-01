@@ -290,3 +290,44 @@ where
   ds.round_id = 5
 group by
   p.team;
+
+
+
+  create or replace view gross_leaderboard_detailed as
+select
+  p.player_id,
+  p.name,
+  -- Gross scores per round
+  sum(case when s.round_id = 1 then s.gross_strokes else 0 end) as gross_r1,
+  sum(case when s.round_id = 2 then s.gross_strokes else 0 end) as gross_r2,
+  sum(case when s.round_id = 3 then s.gross_strokes else 0 end) as gross_r3,
+  sum(case when s.round_id = 4 then s.gross_strokes else 0 end) as gross_r4,
+  sum(case when s.round_id = 5 then s.gross_strokes else 0 end) as gross_r5,
+  -- Par per round (get from Courses via Rounds)
+  max(case when s.round_id = 1 then c.total_par else null end) as par_r1,
+  max(case when s.round_id = 2 then c.total_par else null end) as par_r2,
+  max(case when s.round_id = 3 then c.total_par else null end) as par_r3,
+  max(case when s.round_id = 4 then c.total_par else null end) as par_r4,
+  max(case when s.round_id = 5 then c.total_par else null end) as par_r5,
+  -- To Par per round
+  sum(case when s.round_id = 1 then s.gross_strokes else 0 end) - max(case when s.round_id = 1 then c.total_par else null end) as to_par_r1,
+  sum(case when s.round_id = 2 then s.gross_strokes else 0 end) - max(case when s.round_id = 2 then c.total_par else null end) as to_par_r2,
+  sum(case when s.round_id = 3 then s.gross_strokes else 0 end) - max(case when s.round_id = 3 then c.total_par else null end) as to_par_r3,
+  sum(case when s.round_id = 4 then s.gross_strokes else 0 end) - max(case when s.round_id = 4 then c.total_par else null end) as to_par_r4,
+  sum(case when s.round_id = 5 then s.gross_strokes else 0 end) - max(case when s.round_id = 5 then c.total_par else null end) as to_par_r5,
+  -- Total gross and total par
+  sum(s.gross_strokes) as total_gross,
+  sum(case when s.round_id in (1,2,3,4,5) then c.total_par else 0 end) as total_par,
+  -- Total to par
+  sum(s.gross_strokes) - sum(case when s.round_id in (1,2,3,4,5) then c.total_par else 0 end) as total_to_par
+from
+  "Scores" s
+  join "Players" p on s.player_id = p.player_id
+  join "Rounds" r on s.round_id = r.round_id
+  join "Courses" c on r.course_id = c.course_id
+where
+  s.round_id in (1,2,3,4,5)
+group by
+  p.player_id, p.name
+order by
+  total_gross asc;

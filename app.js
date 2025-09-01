@@ -1044,3 +1044,76 @@ function getInitials(pid) {
     if (!p) return '';
     return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
 }
+
+async function renderGrossLeaderboard() {
+    const leaderboardContainer = document.getElementById('leaderboard-gross');
+    leaderboardContainer.innerHTML = '<div class="loader"></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('gross_leaderboard_detailed')
+            .select('*');
+        if (error) throw error;
+
+        // Sort by total_gross ascending (lowest is best)
+        data.sort((a, b) => a.total_gross - b.total_gross);
+
+        // Build the table
+        let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left font-bold">Rank</th>
+                    <th class="px-4 py-2 text-left font-bold">Player</th>
+                    <th class="px-4 py-2 text-center font-bold">R1</th>
+                    <th class="px-4 py-2 text-center font-bold">R2</th>
+                    <th class="px-4 py-2 text-center font-bold">R3</th>
+                    <th class="px-4 py-2 text-center font-bold">R4</th>
+                    <th class="px-4 py-2 text-center font-bold">R5</th>
+                    <th class="px-4 py-2 text-center font-bold">Total</th>
+                    <th class="px-4 py-2 text-center font-bold">To Par</th>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="text-xs text-gray-500 font-normal">Gross / To Par</td>
+                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        data.forEach((row, idx) => {
+            function toParStr(val) {
+                if (val === null || val === undefined) return '';
+                if (val === 0) return 'E';
+                return val > 0 ? `+${val}` : `${val}`;
+            }
+            html += `<tr>
+                <td class="px-4 py-2">${idx + 1}</td>
+                <td class="px-4 py-2">${row.name}</td>
+                <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
+                <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
+                <td class="px-4 py-2 text-center">${row.gross_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
+                <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
+                <td class="px-4 py-2 text-center">${row.gross_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
+                <td class="px-4 py-2 text-center font-bold">${row.total_gross || '-'}</td>
+                <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
+            </tr>`;
+        });
+
+        html += `</tbody></table>`;
+        leaderboardContainer.innerHTML = html;
+    } catch (err) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading gross leaderboard: ${err.message}</div>`;
+    }
+}
+
+document.getElementById('leaderboard-tab-gross').addEventListener('click', () => {
+    showLeaderboardTab('gross');
+    renderGrossLeaderboard();
+});
+// Optionally, call renderGrossLeaderboard() on initial load of the leaderboard tab
