@@ -923,30 +923,30 @@ function showPlayerProfile(playerId) {
     playersView.classList.add('hidden');
     dashboardView.classList.add('hidden');
     leaderboardView.classList.add('hidden');
-    profileView.classList.remove('hidden');
+    profileView.classList.add('hidden');
     moneyView.classList.add('hidden');
     tabNav.classList.add('hidden');
 
     // Render Player Card with tabs
     profileView.innerHTML = `
-    <div class="card p-6 max-w-2xl mx-auto">
-        <button id="playerHomeButton" class="mb-4 px-4 py-2 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 font-semibold flex items-center">
-            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
-            Home
-        </button>
-        <h2 class="text-2xl font-bold mb-4" id="playerCardName"></h2>
-        <div class="mb-6 flex justify-center space-x-2">
-            <button id="player-tab-rounds" class="player-subtab-button active px-4 py-2 rounded-md font-semibold">Rounds</button>
-            <button id="player-tab-handicaps" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Course Handicaps</button>
-            <button id="player-tab-earnings" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Earnings</button>
-            <button id="player-tab-compare" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Compare</button>
+        <div class="card p-6 max-w-2xl mx-auto">
+            <button id="playerHomeButton" class="mb-4 px-4 py-2 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 font-semibold flex items-center">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
+                Home
+            </button>
+            <h2 class="text-2xl font-bold mb-4" id="playerCardName"></h2>
+            <div class="mb-6 flex justify-center space-x-2">
+                <button id="player-tab-rounds" class="player-subtab-button active px-4 py-2 rounded-md font-semibold">Rounds</button>
+                <button id="player-tab-handicaps" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Course Handicaps</button>
+                <button id="player-tab-earnings" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Earnings</button>
+                <button id="player-tab-compare" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Compare</button>
+            </div>
+            <div id="player-tab-content-rounds" class="player-tab-content"></div>
+            <div id="player-tab-content-handicaps" class="player-tab-content hidden"></div>
+            <div id="player-tab-content-earnings" class="player-tab-content hidden"></div>
+            <div id="player-tab-content-compare" class="player-tab-content hidden"></div>
         </div>
-        <div id="player-tab-content-rounds" class="player-tab-content"></div>
-        <div id="player-tab-content-handicaps" class="player-tab-content hidden"></div>
-        <div id="player-tab-content-earnings" class="player-tab-content hidden"></div>
-        <div id="player-tab-content-compare" class="player-tab-content hidden"></div>
-    </div>
-`;
+    `;
 
     // Fetch and display player name and team
     supabase.from('Players').select('name, team').eq('player_id', playerId).single().then(({ data }) => {
