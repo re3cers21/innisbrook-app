@@ -945,9 +945,14 @@ function showPlayerProfile(playerId) {
         </div>
     `;
 
-    // Fetch and display player name
-    supabase.from('Players').select('name').eq('player_id', playerId).single().then(({ data }) => {
-        if (data) document.getElementById('playerCardName').textContent = data.name;
+    // Fetch and display player name and team
+    supabase.from('Players').select('name, team').eq('player_id', playerId).single().then(({ data }) => {
+        if (data) {
+            document.getElementById('playerCardName').innerHTML = `
+                ${data.name}
+                <span class="ml-3 italic text-emerald-600 text-base font-normal">(${data.team})</span>
+            `;
+        }
     });
 
     // Tab switching logic
@@ -1716,15 +1721,25 @@ async function renderPlayerHandicapsTab(playerId) {
             <div class="flex flex-col md:flex-row gap-4 mb-6">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Course</label>
-                    <select id="courseSelect" class="border rounded px-3 py-2">
-                        ${courses.map(c => `<option value="${c.course_id}" ${c.course_id === selectedCourseId ? 'selected' : ''}>${c.course_name}</option>`).join('')}
-                    </select>
+                    <div class="relative">
+                        <select id="courseSelect" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
+                            ${courses.map(c => `<option value="${c.course_id}" ${c.course_id === selectedCourseId ? 'selected' : ''}>${c.course_name}</option>`).join('')}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Tee</label>
-                    <select id="teeSelect" class="border rounded px-3 py-2">
-                        ${teesForCourse.map(t => `<option value="${t.tee_id}" ${t.tee_id === selectedTeeId ? 'selected' : ''}>${t.tee_name}</option>`).join('')}
-                    </select>
+                    <div class="relative">
+                        <select id="teeSelect" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
+                            ${teesForCourse.map(t => `<option value="${t.tee_id}" ${t.tee_id === selectedTeeId ? 'selected' : ''}>${t.tee_name}</option>`).join('')}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </div>
                 </div>
             </div>
             <div class="mt-4 text-lg">
