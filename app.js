@@ -923,7 +923,7 @@ function showPlayerProfile(playerId) {
     playersView.classList.add('hidden');
     dashboardView.classList.add('hidden');
     leaderboardView.classList.add('hidden');
-    profileView.classList.add('hidden');
+    profileView.classList.remove('hidden');
     moneyView.classList.add('hidden');
     tabNav.classList.add('hidden');
 
@@ -967,18 +967,16 @@ function showPlayerProfile(playerId) {
             });
             document.getElementById(`player-tab-${tab}`).classList.add('active');
             document.getElementById(`player-tab-content-${tab}`).classList.remove('hidden');
-            // Call the correct render function for each tab
             if (tab === 'handicaps') renderPlayerHandicapsTab(playerId);
             if (tab === 'earnings') renderPlayerEarningsTab(playerId);
             if (tab === 'rounds') renderPlayerRoundsTab(playerId);
-            // (Add compare logic if needed)
         });
     });
 
     // Render default tab
     renderPlayerRoundsTab(playerId);
 
-    // Attach the event listener right after rendering the HTML
+    // Attach the Home button event listener
     document.getElementById('playerHomeButton').addEventListener('click', () => {
         window.location.reload();
     });
