@@ -967,6 +967,63 @@ function showPlayerProfile(playerId) {
         showView(lastActiveTab);
         tabNav.classList.remove('hidden');
     });
+
+    // Render player's rounds tab
+    async function renderPlayerRoundsTab(playerId) {
+        const roundsDiv = document.getElementById('player-tab-content-rounds');
+        roundsDiv.innerHTML = '<div class="loader"></div>';
+
+        // Fetch gross and net scores for this player
+        const [{ data: gross, error: grossError }, { data: net, error: netError }] = await Promise.all([
+            supabase.from('gross_leaderboard_detailed').select('*').eq('player_id', playerId),
+            supabase.from('net_leaderboard_detailed').select('*').eq('player_id', playerId)
+        ]);
+        if (grossError || netError) {
+            roundsDiv.innerHTML = `<div class="text-red-500 italic">Error loading scores.</div>`;
+            return;
+        }
+        const grossRow = gross && gross[0];
+        const netRow = net && net[0];
+
+        // Fetch player info for team
+        const { data: player, error: playerError } = await supabase.from('Players').select('team').eq('player_id', playerId).single();
+        let teamPoints = null;
+        if (player && player.team) {
+            // Fetch team points
+            const { data: teamData } = await supabase.from('team_leaderboard_detailed').select('*').eq('team', player.team).single();
+            if (teamData) {
+                teamPoints = teamData.total_points;
+            }
+        }
+
+        // Build Gross/Net Table
+        let html = `<h3 class="text-xl font-bold mb-4">Rounds Summary</h3>`;
+        html += `<table class="min-w-full text-sm scoreboard-table mb-6">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Gross</th>
+                    <th>Net</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        for (let i = 1; i <= 5; i++) {
+            html += `<tr>
+                <td class="px-4 py-2 text-center">Round ${i}</td>
+                <td class="px-4 py-2 text-center">${grossRow ? grossRow[`gross_r${i}`] : '-'}</td>
+                <td class="px-4 py-2 text-center">${netRow ? netRow[`net_r${i}`] : '-'}</td>
+            </tr>`;
+        }
+        html += `</tbody></table>`;
+
+        // Show team points
+        html += `<div class="mt-4 text-lg"><strong>Team Points Earned:</strong> ${teamPoints !== null ? teamPoints : '-'}</div>`;
+
+        roundsDiv.innerHTML = html;
+    }
+
+    // Call this after rendering the player card
+    renderPlayerRoundsTab(playerId);
 }
 
 // 3. Event delegation for clickable player names (already present in your code)
