@@ -1299,6 +1299,8 @@ function showTeamPage(teamName) {
     }, 100);
 }
 
+window.showTeamPage = showTeamPage;
+
 // Update renderTeamLeaderboard to use a link for the team name
 async function renderTeamLeaderboard() {
     const leaderboardContainer = document.getElementById('leaderboard-team');
@@ -1346,7 +1348,7 @@ async function renderTeamLeaderboard() {
                 const isWinner = row.total_points >= maxPoints;
                 html += `<tr${isWinner ? ' style="background:#e6f9ed;font-weight:bold;"' : ''}>
                     <td class="px-4 py-2 font-bold">
-                        <a href="#" onclick="showTeamPage('${row.team}');return false;" class="text-blue-600 underline">${row.team}</a>
+                        <span onclick="showTeamPage('${row.team}');return false;" style="cursor:pointer;">${row.team}</span>
                         ${isWinner ? ' <span class="winner-badge">Winner!</span>' : ''}
                     </td>
                     <td class="px-4 py-2 text-center">${row.points_r1 ?? '-'}</td>
