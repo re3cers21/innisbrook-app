@@ -1404,3 +1404,101 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => {
     showLeaderboardTab('team');
     renderTeamLeaderboard();
 });
+
+// --- Payouts & Games Page ---
+async function renderPayoutsGamesPage() {
+    const moneyContent = document.getElementById('moneyContent');
+    moneyContent.innerHTML = '<div class="loader"></div>';
+
+    // Fetch round game winners
+    const { data: winners, error: winnersError } = await supabase
+        .from('RoundGameWinnersWithName')
+        .select('*')
+        .order('round_id, event_type');
+    if (winnersError) {
+        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading round winners: ${winnersError.message}</div>`;
+        return;
+    }
+
+    // Fetch buyins for earnings leaderboard
+    const { data: buyins, error: buyinsError } = await supabase
+        .from('buyins_with_names')
+        .select('*');
+    if (buyinsError) {
+        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading buyins: ${buyinsError.message}</div>`;
+        return;
+    }
+
+    // Calculate earnings
+    // Payout rules (customize as needed)
+    const CTP_PAYOUT = 25; // per round
+    const FIRST_BIRDIE_PAYOUT = 25; // per round
+    const NET_CHAMP_PAYOUT = 180;
+    const TEAM_GAME_PAYOUT = 170; // per player, 6 players
+
+    // Build a map for player earnings
+    const earnings = {};
+    buyins.forEach(b => {
+        earnings[b.player_id] = {
+            name: b.name,
+            total: 0,
+            details: []
+        };
+    });
+
+    // Add CTP and First Birdie winnings
+    winners.forEach(w => {
+        if (!w.player_id) return;
+        if (!earnings[w.player_id]) return;
+        let amount = 0;
+        if (w.event_type === 'ctp') amount = CTP_PAYOUT;
+        if (w.event_type === 'first_birdie') amount = FIRST_BIRDIE_PAYOUT;
+        if (amount > 0) {
+            earnings[w.player_id].total += amount;
+            earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
+        }
+    });
+
+    // TODO: Add Net Champ and Team Game payouts based on your leaderboard logic
+    // For now, you can manually add these or fetch from your leaderboard views
+
+    // Build HTML for winners per round
+    let winnersHtml = `<h3 class="text-xl font-bold mb-4">Winners Per Round</h3>`;
+    let grouped = {};
+    winners.forEach(w => {
+        if (!grouped[w.round_id]) grouped[w.round_id] = [];
+        grouped[w.round_id].push(w);
+    });
+    winnersHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Round</th><th>Event</th><th>Winner</th></tr></thead><tbody>`;
+    Object.keys(grouped).forEach(round_id => {
+        grouped[round_id].forEach(w => {
+            winnersHtml += `<tr>
+                <td class="px-4 py-2 text-center">${w.round_id}</td>
+                <td class="px-4 py-2 text-center">${w.event_type === 'ctp' ? 'Closest to the Pin' : 'First Birdie'}</td>
+                <td class="px-4 py-2 text-center">${w.winner_name || '-'}</td>
+            </tr>`;
+        });
+    });
+    winnersHtml += `</tbody></table>`;
+
+    // Build HTML for earnings leaderboard
+    let leaderboard = Object.values(earnings).sort((a, b) => b.total - a.total);
+    let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
+    earningsHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Player</th><th>Total Earnings</th><th>Details</th></tr></thead><tbody>`;
+    leaderboard.forEach(e => {
+        earningsHtml += `<tr>
+            <td class="px-4 py-2">${e.name}</td>
+            <td class="px-4 py-2 text-center font-bold">$${e.total}</td>
+            <td class="px-4 py-2">${e.details.join('<br>')}</td>
+        </tr>`;
+    });
+    earningsHtml += `</tbody></table>`;
+
+    moneyContent.innerHTML = winnersHtml + earningsHtml;
+}
+
+// Hook up to tab
+document.getElementById('tab-money').addEventListener('click', () => {
+    showView('money');
+    renderPayoutsGamesPage();
+});

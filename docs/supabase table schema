@@ -76,3 +76,19 @@ create table public.singles_matchups (
   team1 text not null,
   team2 text not null
 );
+
+
+-- For each player, insert a row into buyins (set all to false initially)
+INSERT INTO public.buyins (player_id, main_event, ctp, first_birdie)
+SELECT player_id, false, false, false
+FROM public."Players"
+WHERE player_id NOT IN (SELECT player_id FROM public.buyins);
+
+create table public."RoundGameWinners" (
+  round_id bigint not null,
+  event_type text not null,
+  player_id bigint null,
+  constraint RoundGameWinners_pkey primary key (round_id, event_type),
+  constraint RoundGameWinners_player_id_fkey foreign KEY (player_id) references "Players" (player_id),
+  constraint RoundGameWinners_round_id_fkey foreign KEY (round_id) references "Rounds" (round_id)
+) TABLESPACE pg_default;
