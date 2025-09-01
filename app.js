@@ -1429,12 +1429,38 @@ async function renderPayoutsGamesPage() {
         return;
     }
 
-    // Calculate earnings
-    // Payout rules (customize as needed)
+    // Fetch Net Champion (lowest total_net)
+    const { data: netLeaderboard, error: netError } = await supabase
+        .from('net_leaderboard_detailed')
+        .select('player_id, name, total_net')
+        .order('total_net', { ascending: true })
+        .limit(1);
+    if (netError) {
+        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading net champion: ${netError.message}</div>`;
+        return;
+    }
+    const netChampion = netLeaderboard && netLeaderboard.length > 0 ? netLeaderboard[0] : null;
+
+    // Fetch Team Winners (team with highest total_points)
+    const { data: teamLeaderboard, error: teamError } = await supabase
+        .from('team_leaderboard_detailed')
+        .select('team, total_points')
+        .order('total_points', { ascending: false })
+        .limit(1);
+    if (teamError) {
+        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading team winners: ${teamError.message}</div>`;
+        return;
+    }
+    const winningTeam = teamLeaderboard && teamLeaderboard.length > 0 ? teamLeaderboard[0].team : null;
+
+    // Fetch all players on the winning team
+    const winningTeamPlayers = buyins.filter(b => b.team === winningTeam);
+
+    // Payout rules
     const CTP_PAYOUT = 25; // per round
     const FIRST_BIRDIE_PAYOUT = 25; // per round
     const NET_CHAMP_PAYOUT = 180;
-    const TEAM_GAME_PAYOUT = 170; // per player, 6 players
+    const TEAM_GAME_PAYOUT = 170; // per player
 
     // Build a map for player earnings
     const earnings = {};
@@ -1459,8 +1485,19 @@ async function renderPayoutsGamesPage() {
         }
     });
 
-    // TODO: Add Net Champ and Team Game payouts based on your leaderboard logic
-    // For now, you can manually add these or fetch from your leaderboard views
+    // Add Net Champion payout
+    if (netChampion && earnings[netChampion.player_id]) {
+        earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
+        earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
+    }
+
+    // Add Team Winner payouts
+    winningTeamPlayers.forEach(p => {
+        if (earnings[p.player_id]) {
+            earnings[p.player_id].total += TEAM_GAME_PAYOUT;
+            earnings[p.player_id].details.push(`Winning Team (${winningTeam}): $${TEAM_GAME_PAYOUT}`);
+        }
+    });
 
     // Build HTML for winners per round
     let winnersHtml = `<h3 class="text-xl font-bold mb-4">Winners Per Round</h3>`;
@@ -1481,6 +1518,14 @@ async function renderPayoutsGamesPage() {
     });
     winnersHtml += `</tbody></table>`;
 
+    // Add Net Champion and Team Winners summary
+    let summaryHtml = `<div class="mb-8">
+        <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
+        <div class="mb-2"><strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})</div>
+        <div><strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})</div>
+        <div class="ml-4">${winningTeamPlayers.map(p => p.name).join(', ')}</div>
+    </div>`;
+
     // Build HTML for earnings leaderboard
     let leaderboard = Object.values(earnings).sort((a, b) => b.total - a.total);
     let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
@@ -1494,7 +1539,7 @@ async function renderPayoutsGamesPage() {
     });
     earningsHtml += `</tbody></table>`;
 
-    moneyContent.innerHTML = winnersHtml + earningsHtml;
+    moneyContent.innerHTML = summaryHtml + winnersHtml + earningsHtml;
 }
 
 // Hook up to tab
