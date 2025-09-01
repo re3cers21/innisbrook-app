@@ -1508,42 +1508,63 @@ async function renderPayoutsGamesPage() {
     </div>`;
 
     // --- Render Winners Per Round tab ---
-    let grouped = {};
-    winners.forEach(w => {
-        if (!grouped[w.round_id]) grouped[w.round_id] = [];
-        grouped[w.round_id].push(w);
-    });
-    let winnersHtml = `<h3 class="text-xl font-bold mb-4">Winners Per Round</h3>`;
-    winnersHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Round</th><th>Event</th><th>Winner</th><th>Payout</th></tr></thead><tbody>`;
-    Object.keys(grouped).forEach(round_id => {
-        grouped[round_id].forEach(w => {
-            let payout = '';
-            if (w.event_type === 'ctp') payout = `$${CTP_PAYOUT}`;
-            if (w.event_type === 'first_birdie') payout = `$${FIRST_BIRDIE_PAYOUT}`;
-            winnersHtml += `<tr>
-                <td class="px-4 py-2 text-center">${w.round_id}</td>
-                <td class="px-4 py-2 text-center">${w.event_type === 'ctp' ? 'Closest to the Pin' : 'First Birdie'}</td>
-                <td class="px-4 py-2 text-center">${w.winner_name || '-'}</td>
-                <td class="px-4 py-2 text-center">${w.winner_name ? payout : '-'}</td>
-            </tr>`;
-        });
-    });
-    winnersHtml += `</tbody></table>`;
-    roundsDiv.innerHTML = winnersHtml;
+    // Split winners by event type
+    const ctpWinners = winners.filter(w => w.event_type === 'ctp');
+    const firstBirdieWinners = winners.filter(w => w.event_type === 'first_birdie');
 
-    // --- Render Earnings Leaderboard tab ---
-    let leaderboard = Object.values(earnings).sort((a, b) => b.total - a.total);
-    let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
-    earningsHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Player</th><th>Total Earnings</th><th>Details</th></tr></thead><tbody>`;
-    leaderboard.forEach(e => {
-        earningsHtml += `<tr>
-            <td class="px-4 py-2">${e.name}</td>
-            <td class="px-4 py-2 text-center font-bold">$${e.total}</td>
-            <td class="px-4 py-2">${e.details.join('<br>')}</td>
+    // Build CTP table
+    let ctpTable = `<table class="min-w-full text-sm scoreboard-table mb-6">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>CTP Winner</th>
+                <th>Payout</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    ctpWinners.forEach(w => {
+        ctpTable += `<tr>
+            <td class="px-4 py-2 text-center">${w.round_id}</td>
+            <td class="px-4 py-2 text-center">${w.winner_name || '-'}</td>
+            <td class="px-4 py-2 text-center">${w.winner_name ? `$${CTP_PAYOUT}` : '-'}</td>
         </tr>`;
     });
-    earningsHtml += `</tbody></table>`;
-    leaderboardDiv.innerHTML = earningsHtml;
+    ctpTable += `</tbody></table>`;
+
+    // Build First Birdie table
+    let birdieTable = `<table class="min-w-full text-sm scoreboard-table mb-6">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>First Birdie Winner</th>
+                <th>Payout</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    firstBirdieWinners.forEach(w => {
+        birdieTable += `<tr>
+            <td class="px-4 py-2 text-center">${w.round_id}</td>
+            <td class="px-4 py-2 text-center">${w.winner_name || '-'}</td>
+            <td class="px-4 py-2 text-center">${w.winner_name ? `$${FIRST_BIRDIE_PAYOUT}` : '-'}</td>
+        </tr>`;
+    });
+    birdieTable += `</tbody></table>`;
+
+    // Render both tables side by side
+    roundsDiv.innerHTML = `
+    <h3 class="text-xl font-bold mb-4">Winners Per Round</h3>
+    <div class="flex flex-col md:flex-row gap-8">
+        <div class="flex-1">
+            <h4 class="text-lg font-semibold mb-2 text-center">Closest to the Pin</h4>
+            ${ctpTable}
+        </div>
+        <div class="flex-1">
+            <h4 class="text-lg font-semibold mb-2 text-center">First Birdie</h4>
+            ${birdieTable}
+        </div>
+    </div>
+`;
+    leaderboardDiv.innerHTML = `<div class="text-gray-500 italic">Earnings leaderboard is under construction and will be available soon.</div>`;
 }
 
 // Sub-tab switching logic
