@@ -108,10 +108,14 @@
         <div id="moneyView" class="hidden">
             <div class="card p-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Payouts / Games</h2>
-                <div id="moneyContent">
-                    <!-- Payouts/Games content will go here -->
-                    <p class="text-center text-gray-500">Loading payouts and games...</p>
+                <div class="mb-6 flex justify-center space-x-2">
+                    <button id="payouts-tab-summary" class="payouts-subtab-button active px-4 py-2 rounded-md font-semibold">Major Payouts</button>
+                    <button id="payouts-tab-rounds" class="payouts-subtab-button px-4 py-2 rounded-md font-semibold">Winners Per Round</button>
+                    <button id="payouts-tab-leaderboard" class="payouts-subtab-button px-4 py-2 rounded-md font-semibold">Earnings Leaderboard</button>
                 </div>
+                <div id="payouts-summary" class="payouts-tab-content"></div>
+                <div id="payouts-rounds" class="payouts-tab-content hidden"></div>
+                <div id="payouts-leaderboard" class="payouts-tab-content hidden"></div>
             </div>
         </div>
 

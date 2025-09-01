@@ -1407,70 +1407,43 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => {
 
 // --- Payouts & Games Page ---
 async function renderPayoutsGamesPage() {
-    const moneyContent = document.getElementById('moneyContent');
-    moneyContent.innerHTML = '<div class="loader"></div>';
+    // Containers for each tab
+    const summaryDiv = document.getElementById('payouts-summary');
+    const roundsDiv = document.getElementById('payouts-rounds');
+    const leaderboardDiv = document.getElementById('payouts-leaderboard');
+    summaryDiv.innerHTML = roundsDiv.innerHTML = leaderboardDiv.innerHTML = '<div class="loader"></div>';
 
-    // Fetch round game winners
-    const { data: winners, error: winnersError } = await supabase
-        .from('RoundGameWinnersWithName')
-        .select('*')
-        .order('round_id, event_type');
-    if (winnersError) {
-        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading round winners: ${winnersError.message}</div>`;
+    // Fetch all data in parallel
+    const [
+        { data: winners, error: winnersError },
+        { data: buyins, error: buyinsError },
+        { data: netLeaderboard, error: netError },
+        { data: teamLeaderboard, error: teamError },
+        { data: buyinCounts, error: buyinCountsError }
+    ] = await Promise.all([
+        supabase.from('RoundGameWinnersWithName').select('*').order('round_id, event_type'),
+        supabase.from('buyins_with_names').select('*'),
+        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net').order('total_net', { ascending: true }).limit(1),
+        supabase.from('team_leaderboard_detailed').select('team, total_points').order('total_points', { ascending: false }).limit(1),
+        supabase.from('event_buyin_counts').select('*').single()
+    ]);
+
+    if (winnersError || buyinsError || netError || teamError || buyinCountsError) {
+        summaryDiv.innerHTML = roundsDiv.innerHTML = leaderboardDiv.innerHTML =
+            `<div class="text-red-500 italic">Error loading payouts data.</div>`;
         return;
     }
 
-    // Fetch buyins for earnings leaderboard
-    const { data: buyins, error: buyinsError } = await supabase
-        .from('buyins_with_names')
-        .select('*');
-    if (buyinsError) {
-        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading buyins: ${buyinsError.message}</div>`;
-        return;
-    }
-
-    // Fetch Net Champion (lowest total_net)
-    const { data: netLeaderboard, error: netError } = await supabase
-        .from('net_leaderboard_detailed')
-        .select('player_id, name, total_net')
-        .order('total_net', { ascending: true })
-        .limit(1);
-    if (netError) {
-        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading net champion: ${netError.message}</div>`;
-        return;
-    }
     const netChampion = netLeaderboard && netLeaderboard.length > 0 ? netLeaderboard[0] : null;
-
-    // Fetch Team Winners (team with highest total_points)
-    const { data: teamLeaderboard, error: teamError } = await supabase
-        .from('team_leaderboard_detailed')
-        .select('team, total_points')
-        .order('total_points', { ascending: false })
-        .limit(1);
-    if (teamError) {
-        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading team winners: ${teamError.message}</div>`;
-        return;
-    }
     const winningTeam = teamLeaderboard && teamLeaderboard.length > 0 ? teamLeaderboard[0].team : null;
-
-    // Fetch all players on the winning team
     const winningTeamPlayers = buyins.filter(b => b.team === winningTeam);
 
-    // Fetch buy-in counts for CTP and First Birdie
-    const { data: buyinCounts, error: buyinCountsError } = await supabase
-        .from('event_buyin_counts')
-        .select('*')
-        .single();
-    if (buyinCountsError) {
-        moneyContent.innerHTML = `<div class="text-red-500 italic">Error loading event buy-in counts: ${buyinCountsError.message}</div>`;
-        return;
-    }
     const CTP_PAYOUT = buyinCounts.ctp_count * 5;
     const FIRST_BIRDIE_PAYOUT = buyinCounts.first_birdie_count * 5;
     const NET_CHAMP_PAYOUT = 180;
-    const TEAM_GAME_PAYOUT = 170; // per player
+    const TEAM_GAME_PAYOUT = 170;
 
-    // Build a map for player earnings
+    // Earnings calculation
     const earnings = {};
     buyins.forEach(b => {
         earnings[b.player_id] = {
@@ -1479,8 +1452,6 @@ async function renderPayoutsGamesPage() {
             details: []
         };
     });
-
-    // Add CTP and First Birdie winnings (use dynamic payout)
     winners.forEach(w => {
         if (!w.player_id) return;
         if (!earnings[w.player_id]) return;
@@ -1492,14 +1463,10 @@ async function renderPayoutsGamesPage() {
             earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
         }
     });
-
-    // Add Net Champion payout
     if (netChampion && earnings[netChampion.player_id]) {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
     }
-
-    // Add Team Winner payouts
     winningTeamPlayers.forEach(p => {
         if (earnings[p.player_id]) {
             earnings[p.player_id].total += TEAM_GAME_PAYOUT;
@@ -1507,13 +1474,22 @@ async function renderPayoutsGamesPage() {
         }
     });
 
-    // Build HTML for winners per round
-    let winnersHtml = `<h3 class="text-xl font-bold mb-4">Winners Per Round</h3>`;
+    // --- Render Major Payouts tab ---
+    summaryDiv.innerHTML = `<div class="mb-8">
+        <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
+        <div class="mb-2"><strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})</div>
+        <div><strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})</div>
+        <div class="ml-4">${winningTeamPlayers.map(p => p.name).join(', ')}</div>
+        <div class="mt-4 text-sm text-gray-600">CTP and First Birdie payout per round: $5 x number of buy-ins (CTP: ${buyinCounts.ctp_count}, First Birdie: ${buyinCounts.first_birdie_count})</div>
+    </div>`;
+
+    // --- Render Winners Per Round tab ---
     let grouped = {};
     winners.forEach(w => {
         if (!grouped[w.round_id]) grouped[w.round_id] = [];
         grouped[w.round_id].push(w);
     });
+    let winnersHtml = `<h3 class="text-xl font-bold mb-4">Winners Per Round</h3>`;
     winnersHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Round</th><th>Event</th><th>Winner</th><th>Payout</th></tr></thead><tbody>`;
     Object.keys(grouped).forEach(round_id => {
         grouped[round_id].forEach(w => {
@@ -1529,17 +1505,9 @@ async function renderPayoutsGamesPage() {
         });
     });
     winnersHtml += `</tbody></table>`;
+    roundsDiv.innerHTML = winnersHtml;
 
-    // Add Net Champion and Team Winners summary
-    let summaryHtml = `<div class="mb-8">
-        <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
-        <div class="mb-2"><strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})</div>
-        <div><strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})</div>
-        <div class="ml-4">${winningTeamPlayers.map(p => p.name).join(', ')}</div>
-        <div class="mt-4 text-sm text-gray-600">CTP and First Birdie payout per round: $5 x number of buy-ins (CTP: ${buyinCounts.ctp_count}, First Birdie: ${buyinCounts.first_birdie_count})</div>
-    </div>`;
-
-    // Build HTML for earnings leaderboard
+    // --- Render Earnings Leaderboard tab ---
     let leaderboard = Object.values(earnings).sort((a, b) => b.total - a.total);
     let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
     earningsHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Player</th><th>Total Earnings</th><th>Details</th></tr></thead><tbody>`;
@@ -1551,12 +1519,24 @@ async function renderPayoutsGamesPage() {
         </tr>`;
     });
     earningsHtml += `</tbody></table>`;
-
-    moneyContent.innerHTML = summaryHtml + winnersHtml + earningsHtml;
+    leaderboardDiv.innerHTML = earningsHtml;
 }
 
-// Hook up to tab
+// Sub-tab switching logic
+function showPayoutsTab(tab) {
+    ['summary', 'rounds', 'leaderboard'].forEach(t => {
+        document.getElementById(`payouts-tab-${t}`).classList.remove('active');
+        document.getElementById(`payouts-${t}`).classList.add('hidden');
+    });
+    document.getElementById(`payouts-tab-${tab}`).classList.add('active');
+    document.getElementById(`payouts-${tab}`).classList.remove('hidden');
+}
+
 document.getElementById('tab-money').addEventListener('click', () => {
     showView('money');
     renderPayoutsGamesPage();
+    showPayoutsTab('summary');
+});
+['summary', 'rounds', 'leaderboard'].forEach(tab => {
+    document.getElementById(`payouts-tab-${tab}`).addEventListener('click', () => showPayoutsTab(tab));
 });

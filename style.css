@@ -387,3 +387,22 @@ body.dark-mode .slider {
 body.dark-mode .switch input:checked + .slider {
   background: linear-gradient(90deg, #2e7d32 60%, #43a047 100%);
 }
+
+/* Payouts Sub-tab Styles */
+.payouts-subtab-button {
+    transition: all 0.2s cubic-bezier(.39,.575,.565,1);
+    background: #e8f5e9;
+    color: #388e3c;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    box-shadow: 0 1px 4px 0 rgba(67,160,71,0.06);
+}
+.payouts-subtab-button.active {
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.12);
+}
+.payouts-tab-content {
+    animation: fadeInUp 0.7s cubic-bezier(.39,.575,.565,1) both;
+}
