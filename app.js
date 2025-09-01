@@ -1045,6 +1045,9 @@ function getInitials(pid) {
     return p.name.split(' ').map(n => n[0]).join('').toUpperCase();
 }
 
+let grossLeaderboardSortCol = 'total_gross';
+let grossLeaderboardSortDir = 1; // 1 = ascending, -1 = descending
+
 async function renderGrossLeaderboard() {
     const leaderboardContainer = document.getElementById('leaderboard-gross');
     leaderboardContainer.innerHTML = '<div class="loader"></div>';
@@ -1055,58 +1058,82 @@ async function renderGrossLeaderboard() {
             .select('*');
         if (error) throw error;
 
-        // Sort by total_gross ascending (lowest is best)
-        data.sort((a, b) => a.total_gross - b.total_gross);
+        // Store data globally for sorting
+        window.grossLeaderboardData = data;
 
-        // Build the table
-        let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
-            <thead>
-                <tr>
-                    <th class="px-4 py-2 text-left font-bold">Rank</th>
-                    <th class="px-4 py-2 text-left font-bold">Player</th>
-                    <th class="px-4 py-2 text-center font-bold">R1</th>
-                    <th class="px-4 py-2 text-center font-bold">R2</th>
-                    <th class="px-4 py-2 text-center font-bold">R3</th>
-                    <th class="px-4 py-2 text-center font-bold">R4</th>
-                    <th class="px-4 py-2 text-center font-bold">R5</th>
-                    <th class="px-4 py-2 text-center font-bold">Total</th>
-                    <th class="px-4 py-2 text-center font-bold">To Par</th>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td class="text-xs text-gray-500 font-normal">Gross / To Par</td>
-                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
-                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
-                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
-                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
-                    <td class="text-xs text-gray-500 font-normal">G / ±</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </thead>
-            <tbody>`;
+        function toParStr(val) {
+            if (val === null || val === undefined) return '';
+            if (val === 0) return 'E';
+            return val > 0 ? `+${val}` : `${val}`;
+        }
 
-        data.forEach((row, idx) => {
-            function toParStr(val) {
-                if (val === null || val === undefined) return '';
-                if (val === 0) return 'E';
-                return val > 0 ? `+${val}` : `${val}`;
+        function sortAndRender() {
+            const sorted = [...window.grossLeaderboardData].sort((a, b) => {
+                let aVal = a[grossLeaderboardSortCol];
+                let bVal = b[grossLeaderboardSortCol];
+                if (grossLeaderboardSortCol === 'name') {
+                    return aVal.localeCompare(bVal) * grossLeaderboardSortDir;
+                }
+                return (aVal - bVal) * grossLeaderboardSortDir;
+            });
+
+            let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left font-bold">Rank</th>
+                        <th class="px-4 py-2 text-left font-bold cursor-pointer" onclick="sortGrossLeaderboard('name')">Player</th>
+                        <th class="px-4 py-2 text-center font-bold">R1</th>
+                        <th class="px-4 py-2 text-center font-bold">R2</th>
+                        <th class="px-4 py-2 text-center font-bold">R3</th>
+                        <th class="px-4 py-2 text-center font-bold">R4</th>
+                        <th class="px-4 py-2 text-center font-bold">R5</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_gross')">Total</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_to_par')">To Par</th>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="text-xs text-gray-500 font-normal">Gross / To Par</td>
+                        <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">G / ±</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            sorted.forEach((row, idx) => {
+                html += `<tr>
+                    <td class="px-4 py-2">${idx + 1}</td>
+                    <td class="px-4 py-2">${row.name}</td>
+                    <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
+                    <td class="px-4 py-2 text-center font-bold">${row.total_gross || '-'}</td>
+                    <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            leaderboardContainer.innerHTML = html;
+        }
+
+        // Expose sort function globally for header onclicks
+        window.sortGrossLeaderboard = function(col) {
+            if (grossLeaderboardSortCol === col) {
+                grossLeaderboardSortDir *= -1;
+            } else {
+                grossLeaderboardSortCol = col;
+                grossLeaderboardSortDir = 1;
             }
-            html += `<tr>
-                <td class="px-4 py-2">${idx + 1}</td>
-                <td class="px-4 py-2">${row.name}</td>
-                <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
-                <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
-                <td class="px-4 py-2 text-center">${row.gross_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
-                <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
-                <td class="px-4 py-2 text-center">${row.gross_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
-                <td class="px-4 py-2 text-center font-bold">${row.total_gross || '-'}</td>
-                <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
-            </tr>`;
-        });
+            sortAndRender();
+        };
 
-        html += `</tbody></table>`;
-        leaderboardContainer.innerHTML = html;
+        sortAndRender();
     } catch (err) {
         leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading gross leaderboard: ${err.message}</div>`;
     }

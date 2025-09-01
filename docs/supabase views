@@ -293,41 +293,59 @@ group by
 
 
 
-  create or replace view gross_leaderboard_detailed as
-select
-  p.player_id,
-  p.name,
-  -- Gross scores per round
-  sum(case when s.round_id = 1 then s.gross_strokes else 0 end) as gross_r1,
-  sum(case when s.round_id = 2 then s.gross_strokes else 0 end) as gross_r2,
-  sum(case when s.round_id = 3 then s.gross_strokes else 0 end) as gross_r3,
-  sum(case when s.round_id = 4 then s.gross_strokes else 0 end) as gross_r4,
-  sum(case when s.round_id = 5 then s.gross_strokes else 0 end) as gross_r5,
-  -- Par per round (get from Courses via Rounds)
-  max(case when s.round_id = 1 then c.total_par else null end) as par_r1,
-  max(case when s.round_id = 2 then c.total_par else null end) as par_r2,
-  max(case when s.round_id = 3 then c.total_par else null end) as par_r3,
-  max(case when s.round_id = 4 then c.total_par else null end) as par_r4,
-  max(case when s.round_id = 5 then c.total_par else null end) as par_r5,
-  -- To Par per round
-  sum(case when s.round_id = 1 then s.gross_strokes else 0 end) - max(case when s.round_id = 1 then c.total_par else null end) as to_par_r1,
-  sum(case when s.round_id = 2 then s.gross_strokes else 0 end) - max(case when s.round_id = 2 then c.total_par else null end) as to_par_r2,
-  sum(case when s.round_id = 3 then s.gross_strokes else 0 end) - max(case when s.round_id = 3 then c.total_par else null end) as to_par_r3,
-  sum(case when s.round_id = 4 then s.gross_strokes else 0 end) - max(case when s.round_id = 4 then c.total_par else null end) as to_par_r4,
-  sum(case when s.round_id = 5 then s.gross_strokes else 0 end) - max(case when s.round_id = 5 then c.total_par else null end) as to_par_r5,
-  -- Total gross and total par
-  sum(s.gross_strokes) as total_gross,
-  sum(case when s.round_id in (1,2,3,4,5) then c.total_par else 0 end) as total_par,
-  -- Total to par
-  sum(s.gross_strokes) - sum(case when s.round_id in (1,2,3,4,5) then c.total_par else 0 end) as total_to_par
-from
-  "Scores" s
-  join "Players" p on s.player_id = p.player_id
-  join "Rounds" r on s.round_id = r.round_id
+ create or replace view gross_leaderboard_detailed as
+with round_pars as (
+  select r.round_id, c.total_par
+  from "Rounds" r
   join "Courses" c on r.course_id = c.course_id
-where
-  s.round_id in (1,2,3,4,5)
-group by
-  p.player_id, p.name
+  where r.round_id in (1,2,3,4,5)
+),
+player_gross as (
+  select
+    p.player_id,
+    p.name,
+    sum(case when s.round_id = 1 then s.gross_strokes else 0 end) as gross_r1,
+    sum(case when s.round_id = 2 then s.gross_strokes else 0 end) as gross_r2,
+    sum(case when s.round_id = 3 then s.gross_strokes else 0 end) as gross_r3,
+    sum(case when s.round_id = 4 then s.gross_strokes else 0 end) as gross_r4,
+    sum(case when s.round_id = 5 then s.gross_strokes else 0 end) as gross_r5,
+    sum(s.gross_strokes) as total_gross
+  from
+    "Scores" s
+    join "Players" p on s.player_id = p.player_id
+  where
+    s.round_id in (1,2,3,4,5)
+  group by
+    p.player_id, p.name
+)
+select
+  pg.player_id,
+  pg.name,
+  pg.gross_r1,
+  pg.gross_r2,
+  pg.gross_r3,
+  pg.gross_r4,
+  pg.gross_r5,
+  rp1.total_par as par_r1,
+  rp2.total_par as par_r2,
+  rp3.total_par as par_r3,
+  rp4.total_par as par_r4,
+  rp5.total_par as par_r5,
+  (pg.gross_r1 - rp1.total_par) as to_par_r1,
+  (pg.gross_r2 - rp2.total_par) as to_par_r2,
+  (pg.gross_r3 - rp3.total_par) as to_par_r3,
+  (pg.gross_r4 - rp4.total_par) as to_par_r4,
+  (pg.gross_r5 - rp5.total_par) as to_par_r5,
+  pg.total_gross,
+  (coalesce(pg.gross_r1,0) + coalesce(pg.gross_r2,0) + coalesce(pg.gross_r3,0) + coalesce(pg.gross_r4,0) + coalesce(pg.gross_r5,0))
+    - (coalesce(rp1.total_par,0) + coalesce(rp2.total_par,0) + coalesce(rp3.total_par,0) + coalesce(rp4.total_par,0) + coalesce(rp5.total_par,0))
+    as total_to_par
+from
+  player_gross pg
+  left join round_pars rp1 on rp1.round_id = 1
+  left join round_pars rp2 on rp2.round_id = 2
+  left join round_pars rp3 on rp3.round_id = 3
+  left join round_pars rp4 on rp4.round_id = 4
+  left join round_pars rp5 on rp5.round_id = 5
 order by
-  total_gross asc;
+  pg.total_gross asc;
