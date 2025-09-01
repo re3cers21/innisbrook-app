@@ -966,7 +966,9 @@ function showPlayerProfile(playerId) {
             document.getElementById(`player-tab-content-${tab}`).classList.remove('hidden');
             // Call the correct render function for each tab
             if (tab === 'handicaps') renderPlayerHandicapsTab(playerId);
-            // Add similar calls for other tabs if needed
+            if (tab === 'earnings') renderPlayerEarningsTab(playerId);
+            if (tab === 'rounds') renderPlayerRoundsTab(playerId);
+            // (Add compare logic if needed)
         });
     });
 
@@ -1760,5 +1762,64 @@ async function renderPlayerHandicapsTab(playerId) {
     }
 
     render();
+}
+
+async function renderPlayerEarningsTab(playerId) {
+    const earningsDiv = document.getElementById('player-tab-content-earnings');
+    earningsDiv.innerHTML = '<div class="loader"></div>';
+
+    // Fetch all buyins (for team info), winners, and leaderboard info
+    const [{ data: buyins }, { data: winners }, { data: netLeaderboard }, { data: teamLeaderboard }, { data: buyinCounts }] = await Promise.all([
+        supabase.from('buyins_with_names').select('*'),
+        supabase.from('RoundGameWinnersWithName').select('*'),
+        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net').order('total_net', { ascending: true }).limit(1),
+        supabase.from('team_leaderboard_detailed').select('team, total_points').order('total_points', { ascending: false }).limit(1),
+        supabase.from('event_buyin_counts').select('*').single()
+    ]);
+
+    // Payouts
+    const CTP_PAYOUT = buyinCounts?.ctp_count ? buyinCounts.ctp_count * 5 : 0;
+    const FIRST_BIRDIE_PAYOUT = buyinCounts?.first_birdie_count ? buyinCounts.first_birdie_count * 5 : 0;
+    const NET_CHAMP_PAYOUT = 180;
+    const TEAM_GAME_PAYOUT = 170;
+
+    let details = [];
+    let total = 0;
+
+    // CTP and First Birdie
+    winners?.forEach(w => {
+        if (w.player_id == playerId) {
+            if (w.event_type === 'ctp') {
+                details.push(`Closest to the Pin (Round ${w.round_id}): <span class="font-semibold text-emerald-700">$${CTP_PAYOUT}</span>`);
+                total += CTP_PAYOUT;
+            }
+            if (w.event_type === 'first_birdie') {
+                details.push(`First Birdie (Round ${w.round_id}): <span class="font-semibold text-emerald-700">$${FIRST_BIRDIE_PAYOUT}</span>`);
+                total += FIRST_BIRDIE_PAYOUT;
+            }
+        }
+    });
+
+    // Net Champion
+    if (netLeaderboard && netLeaderboard.length && netLeaderboard[0].player_id == playerId) {
+        details.push(`Net Champion: <span class="font-semibold text-emerald-700">$${NET_CHAMP_PAYOUT}</span>`);
+        total += NET_CHAMP_PAYOUT;
+    }
+
+    // Team Winner
+    const player = buyins?.find(b => b.player_id == playerId);
+    const winningTeam = teamLeaderboard && teamLeaderboard.length ? teamLeaderboard[0].team : null;
+    if (player && player.team === winningTeam) {
+        details.push(`Winning Team: <span class="font-semibold text-emerald-700">$${TEAM_GAME_PAYOUT}</span>`);
+        total += TEAM_GAME_PAYOUT;
+    }
+
+    earningsDiv.innerHTML = `
+        <h3 class="text-xl font-bold mb-4">Earnings</h3>
+        ${details.length === 0 ? `<div class="text-gray-500 italic mb-4">No winnings yet for this player.</div>` : `
+            <ul class="mb-4 space-y-2">${details.map(d => `<li>${d}</li>`).join('')}</ul>
+        `}
+        <div class="mt-4 text-lg font-bold">Total Earnings: <span class="text-emerald-700 text-2xl">$${total}</span></div>
+    `;
 }
 
