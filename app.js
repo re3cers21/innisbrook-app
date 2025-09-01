@@ -1736,7 +1736,7 @@ async function renderPlayerHandicapsTab(playerId) {
                             ${courses.map(c => `<option value="${c.course_id}" ${c.course_id === selectedCourseId ? 'selected' : ''}>${c.course_name}</option>`).join('')}
                         </select>
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                         </span>
                     </div>
                 </div>
@@ -1747,7 +1747,7 @@ async function renderPlayerHandicapsTab(playerId) {
                             ${teesForCourse.map(t => `<option value="${t.tee_id}" ${t.tee_id === selectedTeeId ? 'selected' : ''}>${t.tee_name}</option>`).join('')}
                         </select>
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                         </span>
                     </div>
                 </div>
@@ -1858,23 +1858,38 @@ async function renderPlayerCompareTab(playerId) {
             <div class="flex flex-wrap gap-4 mb-4 items-end">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Round</label>
-                    <select id="compareRoundSelect" class="border rounded px-3 py-2">
-                        ${rounds.map(r => `<option value="${r.round_id}" ${r.round_id === selectedRoundId ? 'selected' : ''}>Round ${r.round_number} - ${r.Courses?.course_name || ''} (${r.round_date})</option>`).join('')}
-                    </select>
+                    <div class="relative">
+                        <select id="compareRoundSelect" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
+                            ${rounds.map(r => `<option value="${r.round_id}" ${r.round_id === selectedRoundId ? 'selected' : ''}>Round ${r.round_number} - ${r.Courses?.course_name || ''} (${r.round_date})</option>`).join('')}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Score Type</label>
-                    <select id="compareScoreType" class="border rounded px-3 py-2">
-                        <option value="gross" ${selectedScoreType === 'gross' ? 'selected' : ''}>Gross</option>
-                        <option value="net" ${selectedScoreType === 'net' ? 'selected' : ''}>Net</option>
-                    </select>
+                    <div class="relative">
+                        <select id="compareScoreType" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
+                            <option value="gross" ${selectedScoreType === 'gross' ? 'selected' : ''}>Gross</option>
+                            <option value="net" ${selectedScoreType === 'net' ? 'selected' : ''}>Net</option>
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Add Player</label>
-                    <select id="compareAddPlayer" class="border rounded px-3 py-2">
-                        <option value="">Select...</option>
-                        ${availablePlayers.map(p => `<option value="${p.player_id}">${p.name} (${p.team})</option>`).join('')}
-                    </select>
+                    <div class="relative">
+                        <select id="compareAddPlayer" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
+                            <option value="">Select...</option>
+                            ${availablePlayers.map(p => `<option value="${p.player_id}">${p.name} (${p.team})</option>`).join('')}
+                        </select>
+                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                        </span>
+                    </div>
                 </div>
             </div>
             <div class="mb-2">
