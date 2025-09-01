@@ -1475,12 +1475,17 @@ async function renderPayoutsGamesPage() {
     });
 
     // --- Render Major Payouts tab ---
-    summaryDiv.innerHTML = `<div class="mb-8">
+    summaryDiv.innerHTML = `
+    <div class="mb-8">
         <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
-        <div class="mb-2"><strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})</div>
-        <div><strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})</div>
-        <div class="ml-4">${winningTeamPlayers.map(p => p.name).join(', ')}</div>
-        <div class="mt-4 text-sm text-gray-600">CTP and First Birdie payout per round: $5 x number of buy-ins (CTP: ${buyinCounts.ctp_count}, First Birdie: ${buyinCounts.first_birdie_count})</div>
+        <div class="mb-4">
+            <strong>Net Champion:</strong> ${netChampion ? netChampion.name : '-'} (${netChampion ? '$' + NET_CHAMP_PAYOUT : ''})<br>
+            <strong>Winning Team:</strong> ${winningTeam || '-'} (${winningTeamPlayers.length > 0 ? '$' + TEAM_GAME_PAYOUT + ' each' : ''})<br>
+            <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
+            <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
+        </div>
+        <h4 class="text-lg font-semibold mb-2">Player Buy-Ins</h4>
+        ${buyinTable}
     </div>`;
 
     // --- Render Winners Per Round tab ---
