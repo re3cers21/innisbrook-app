@@ -1159,3 +1159,117 @@ document.getElementById('leaderboard-tab-gross').addEventListener('click', () =>
     renderGrossLeaderboard();
 });
 // Optionally, call renderGrossLeaderboard() on initial load of the leaderboard tab
+
+let netLeaderboardSortCol = 'total_net';
+let netLeaderboardSortDir = 1; // 1 = ascending, -1 = descending
+
+async function renderNetLeaderboard() {
+    const leaderboardContainer = document.getElementById('leaderboard-net');
+    leaderboardContainer.innerHTML = '<div class="loader"></div>';
+
+    try {
+        const { data, error } = await supabase
+            .from('net_leaderboard_detailed')
+            .select('*');
+        if (error) throw error;
+
+        window.netLeaderboardData = data;
+
+        function toParStr(val) {
+            if (val === null || val === undefined) return '';
+            if (val === 0) return 'E';
+            return val > 0 ? `+${val}` : `${val}`;
+        }
+
+        function sortAndRender() {
+            // 1. Calculate rank by total_net (lowest = 1)
+            const ranked = [...window.netLeaderboardData]
+                .slice()
+                .sort((a, b) => a.total_net - b.total_net);
+            const playerIdToRank = {};
+            ranked.forEach((row, idx) => {
+                playerIdToRank[row.player_id] = idx + 1;
+            });
+
+            // 2. Sort by current sort column/direction for display
+            const sorted = [...window.netLeaderboardData].sort((a, b) => {
+                let aVal = a[netLeaderboardSortCol];
+                let bVal = b[netLeaderboardSortCol];
+                if (netLeaderboardSortCol === 'name') {
+                    return aVal.localeCompare(bVal) * netLeaderboardSortDir;
+                }
+                return (aVal - bVal) * netLeaderboardSortDir;
+            });
+
+            // Helper for sort icon
+            function sortIcon(col) {
+                if (netLeaderboardSortCol !== col) return '';
+                return netLeaderboardSortDir === 1 ? ' ▲' : ' ▼';
+            }
+
+            let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left font-bold">Rank</th>
+                        <th class="px-4 py-2 text-left font-bold cursor-pointer" onclick="sortNetLeaderboard('name')">Player${sortIcon('name')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('net_r1')">R1${sortIcon('net_r1')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('net_r2')">R2${sortIcon('net_r2')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('net_r3')">R3${sortIcon('net_r3')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('net_r4')">R4${sortIcon('net_r4')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('net_r5')">R5${sortIcon('net_r5')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('total_net')">Total${sortIcon('total_net')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortNetLeaderboard('total_to_par')">To Par${sortIcon('total_to_par')}</th>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td class="text-xs text-gray-500 font-normal">Net / To Par</td>
+                        <td class="text-xs text-gray-500 font-normal">N / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">N / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">N / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">N / ±</td>
+                        <td class="text-xs text-gray-500 font-normal">N / ±</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            sorted.forEach((row) => {
+                html += `<tr>
+                    <td class="px-4 py-2">${playerIdToRank[row.player_id]}</td>
+                    <td class="px-4 py-2">${row.name}</td>
+                    <td class="px-4 py-2 text-center">${row.net_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.net_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.net_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.net_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.net_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
+                    <td class="px-4 py-2 text-center font-bold">${row.total_net || '-'}</td>
+                    <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
+                </tr>`;
+            });
+
+            html += `</tbody></table>`;
+            leaderboardContainer.innerHTML = html;
+        }
+
+        // Expose sort function globally for header onclicks
+        window.sortNetLeaderboard = function(col) {
+            if (netLeaderboardSortCol === col) {
+                netLeaderboardSortDir *= -1;
+            } else {
+                netLeaderboardSortCol = col;
+                netLeaderboardSortDir = 1;
+            }
+            sortAndRender();
+        };
+
+        sortAndRender();
+    } catch (err) {
+        leaderboardContainer.innerHTML = `<div class="text-red-500 italic">Error loading net leaderboard: ${err.message}</div>`;
+    }
+}
+
+document.getElementById('leaderboard-tab-net').addEventListener('click', () => {
+    showLeaderboardTab('net');
+    renderNetLeaderboard();
+});
