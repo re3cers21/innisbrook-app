@@ -1675,3 +1675,81 @@ document.getElementById('tab-money').addEventListener('click', () => {
 ['summary', 'rounds', 'leaderboard'].forEach(tab => {
     document.getElementById(`payouts-tab-${tab}`).addEventListener('click', () => showPayoutsTab(tab));
 });
+
+// --- Player Handicaps Tab ---
+async function renderPlayerHandicapsTab(playerId) {
+    const tabDiv = document.getElementById('player-tab-content-handicaps');
+    tabDiv.innerHTML = '<div class="loader"></div>';
+
+    // Fetch all courses and tees
+    const [{ data: courses, error: coursesError }, { data: tees, error: teesError }] = await Promise.all([
+        supabase.from('Courses').select('course_id, course_name').order('course_name'),
+        supabase.from('Tees').select('tee_id, course_id, tee_name').order('tee_name')
+    ]);
+    if (coursesError || teesError) {
+        tabDiv.innerHTML = `<div class="text-red-500 italic">Error loading courses or tees.</div>`;
+        return;
+    }
+
+    // Fetch all course handicaps for this player
+    const { data: handicaps, error: hcError } = await supabase
+        .from('course_handicap_view')
+        .select('*')
+        .eq('player_id', playerId);
+    if (hcError) {
+        tabDiv.innerHTML = `<div class="text-red-500 italic">Error loading course handicaps.</div>`;
+        return;
+    }
+
+    // Initial selections
+    let selectedCourseId = courses[0]?.course_id;
+    let selectedTeeId = null;
+
+    function render() {
+        // Filter tees for selected course
+        const teesForCourse = tees.filter(t => t.course_id === selectedCourseId);
+        if (!selectedTeeId || !teesForCourse.some(t => t.tee_id === selectedTeeId)) {
+            selectedTeeId = teesForCourse[0]?.tee_id;
+        }
+
+        // Find the course handicap for this player/course/tee
+        const hc = handicaps.find(h => h.course_id === selectedCourseId && h.tee_id === selectedTeeId);
+
+        tabDiv.innerHTML = `
+            <h3 class="text-xl font-bold mb-4">Course Handicap</h3>
+            <div class="flex flex-col md:flex-row gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Course</label>
+                    <select id="courseSelect" class="border rounded px-3 py-2">
+                        ${courses.map(c => `<option value="${c.course_id}" ${c.course_id === selectedCourseId ? 'selected' : ''}>${c.course_name}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Tee</label>
+                    <select id="teeSelect" class="border rounded px-3 py-2">
+                        ${teesForCourse.map(t => `<option value="${t.tee_id}" ${t.tee_id === selectedTeeId ? 'selected' : ''}>${t.tee_name}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 text-lg">
+                <strong>Course Handicap:</strong>
+                <span class="font-bold text-emerald-700 text-2xl ml-2">${hc ? hc.course_handicap : '-'}</span>
+            </div>
+        `;
+
+        // Add event listeners for dropdowns
+        tabDiv.querySelector('#courseSelect').addEventListener('change', (e) => {
+            selectedCourseId = Number(e.target.value);
+            render();
+        });
+        tabDiv.querySelector('#teeSelect').addEventListener('change', (e) => {
+            selectedTeeId = Number(e.target.value);
+            render();
+        });
+    }
+
+    render();
+}
+
+// Call this after rendering the player card
+renderPlayerHandicapsTab(playerId);
