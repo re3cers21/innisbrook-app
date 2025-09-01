@@ -915,105 +915,70 @@ async function fetchPlayerProfile(playerId) {
     }
 }
 
+// 1. Make player names clickable (already done in your code with .clickable-player class)
+
+// 2. Show Player Card view with tabs
 function showPlayerProfile(playerId) {
-    fetchPlayerProfile(playerId).then(player => {
-        if (!player) return;
-        // Hide all views
-        playersView.classList.add('hidden');
-        dashboardView.classList.add('hidden');
-        leaderboardView.classList.add('hidden');
-        profileView.classList.add('hidden');
-        moneyView.classList.add('hidden'); // Hide money view if open
-        tabNav.classList.add('hidden');
+    // Hide all main views
+    playersView.classList.add('hidden');
+    dashboardView.classList.add('hidden');
+    leaderboardView.classList.add('hidden');
+    profileView.classList.remove('hidden');
+    moneyView.classList.add('hidden');
+    tabNav.classList.add('hidden');
 
-        // Show profile view
-        profileView.classList.remove('hidden');
+    // Render Player Card with tabs
+    profileView.innerHTML = `
+        <div class="card p-6 max-w-2xl mx-auto">
+            <button id="backToMain" class="mb-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">&larr; Back</button>
+            <h2 class="text-2xl font-bold mb-4" id="playerCardName"></h2>
+            <div class="mb-6 flex justify-center space-x-2">
+                <button id="player-tab-rounds" class="player-subtab-button active px-4 py-2 rounded-md font-semibold">Rounds</button>
+                <button id="player-tab-handicaps" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Course Handicaps</button>
+                <button id="player-tab-earnings" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Earnings</button>
+                <button id="player-tab-compare" class="player-subtab-button px-4 py-2 rounded-md font-semibold">Compare</button>
+            </div>
+            <div id="player-tab-content-rounds" class="player-tab-content"></div>
+            <div id="player-tab-content-handicaps" class="player-tab-content hidden"></div>
+            <div id="player-tab-content-earnings" class="player-tab-content hidden"></div>
+            <div id="player-tab-content-compare" class="player-tab-content hidden"></div>
+        </div>
+    `;
 
-        // Populate profile data
-        profileView.innerHTML = `
-            <div class="card p-4">
-                <h2 class="text-2xl font-bold mb-4">${player.name}</h2>
-                <p class="text-sm text-gray-500 mb-2">Player ID: ${player.player_id}</p>
-                <p class="text-sm text-gray-500 mb-4">Team: ${player.team || 'N/A'}</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold mb-2">Profile</h3>
-                        <p class="text-sm text-gray-700">HCP: ${player.handicap_index}</p>
-                        <p class="text-sm text-gray-700">Email: ${player.email || 'N/A'}</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold mb-2">Stats</h3>
-                        <p class="text-sm text-gray-700">Rounds: ${player.rounds_played || 0}</p>
-                        <p class="text-sm text-gray-700">Avg Score: ${player.avg_score !== null ? player.avg_score.toFixed(1) : 'N/A'}</p>
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <button class="px-4 py-2 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700" onclick="editPlayerProfile(${player.player_id})">Edit Profile</button>
-                </div>
-            </div>`;
+    // Fetch and display player name
+    supabase.from('Players').select('name').eq('player_id', playerId).single().then(({ data }) => {
+        if (data) document.getElementById('playerCardName').textContent = data.name;
+    });
+
+    // Tab switching logic
+    ['rounds', 'handicaps', 'earnings', 'compare'].forEach(tab => {
+        document.getElementById(`player-tab-${tab}`).addEventListener('click', () => {
+            ['rounds', 'handicaps', 'earnings', 'compare'].forEach(t => {
+                document.getElementById(`player-tab-${t}`).classList.remove('active');
+                document.getElementById(`player-tab-content-${t}`).classList.add('hidden');
+            });
+            document.getElementById(`player-tab-${tab}`).classList.add('active');
+            document.getElementById(`player-tab-content-${tab}`).classList.remove('hidden');
+        });
+    });
+
+    // Back button
+    document.getElementById('backToMain').addEventListener('click', () => {
+        showView(lastActiveTab);
+        tabNav.classList.remove('hidden');
     });
 }
 
-// --- Edit Player Profile ---
-function editPlayerProfile(playerId) {
-    fetchPlayerProfile(playerId).then(player => {
-        if (!player) return;
-        // Hide all views
-        playersView.classList.add('hidden');
-        dashboardView.classList.add('hidden');
-        leaderboardView.classList.add('hidden');
-        profileView.classList.add('hidden');
-        moneyView.classList.add('hidden'); // Hide money view if open
-        tabNav.classList.add('hidden');
-
-        // Show profile view
-        profileView.classList.remove('hidden');
-
-        // Populate profile data in editable form
-        profileView.innerHTML = `
-            <div class="card p-4">
-                <h2 class="text-2xl font-bold mb-4">Edit Profile - ${player.name}</h2>
-                <p class="text-sm text-gray-500 mb-4">Player ID: ${player.player_id}</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-name">Name</label>
-                        <input type="text" id="edit-name" class="block w-full p-2 border rounded-md" value="${player.name}">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1" for="edit-team">Team</label>
-                        <input type="text" id="edit-team" class="block w-full p-2 border rounded-md" value="${player.team || ''}">
-                    </div>
-                </div>
-                <div class="mt-4">
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-md font-semibold hover:bg-green-700" onclick="savePlayerProfile(${player.player_id})">Save Changes</button>
-                    <button class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md font-semibold hover:bg-gray-400" onclick="showPlayerProfile(${player.player_id})">Cancel</button>
-                </div>
-            </div>`;
-    });
-}
-
-async function savePlayerProfile(playerId) {
-    const name = document.getElementById('edit-name').value.trim();
-    const team = document.getElementById('edit-team').value.trim();
-
-    if (!name) {
-        return showError('Name is required.');
-    }
-
-    try {
-        const { error } = await supabase
-            .from('Players')
-            .update({ name, team })
-            .eq('player_id', playerId);
-
-        if (error) throw error;
-
-        // Refresh player profile
+// 3. Event delegation for clickable player names (already present in your code)
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('clickable-player')) {
+        const playerId = e.target.dataset.playerId;
         showPlayerProfile(playerId);
-    } catch (e) {
-        showError('Failed to save profile changes.', e.message);
     }
-}
+});
+
+// 4. Add minimal CSS for player-subtab-button (add to style.css if you want custom style)
+
 
 // --- Initial Setup ---
 document.addEventListener('DOMContentLoaded', async () => {
