@@ -1058,7 +1058,6 @@ async function renderGrossLeaderboard() {
             .select('*');
         if (error) throw error;
 
-        // Store data globally for sorting
         window.grossLeaderboardData = data;
 
         function toParStr(val) {
@@ -1077,18 +1076,24 @@ async function renderGrossLeaderboard() {
                 return (aVal - bVal) * grossLeaderboardSortDir;
             });
 
+            // Helper for sort icon
+            function sortIcon(col) {
+                if (grossLeaderboardSortCol !== col) return '';
+                return grossLeaderboardSortDir === 1 ? ' ▲' : ' ▼';
+            }
+
             let html = `<table class="min-w-full text-sm scoreboard-table mb-4">
                 <thead>
                     <tr>
                         <th class="px-4 py-2 text-left font-bold">Rank</th>
-                        <th class="px-4 py-2 text-left font-bold cursor-pointer" onclick="sortGrossLeaderboard('name')">Player</th>
-                        <th class="px-4 py-2 text-center font-bold">R1</th>
-                        <th class="px-4 py-2 text-center font-bold">R2</th>
-                        <th class="px-4 py-2 text-center font-bold">R3</th>
-                        <th class="px-4 py-2 text-center font-bold">R4</th>
-                        <th class="px-4 py-2 text-center font-bold">R5</th>
-                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_gross')">Total</th>
-                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_to_par')">To Par</th>
+                        <th class="px-4 py-2 text-left font-bold cursor-pointer" onclick="sortGrossLeaderboard('name')">Player${sortIcon('name')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('gross_r1')">R1${sortIcon('gross_r1')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('gross_r2')">R2${sortIcon('gross_r2')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('gross_r3')">R3${sortIcon('gross_r3')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('gross_r4')">R4${sortIcon('gross_r4')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('gross_r5')">R5${sortIcon('gross_r5')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_gross')">Total${sortIcon('total_gross')}</th>
+                        <th class="px-4 py-2 text-center font-bold cursor-pointer" onclick="sortGrossLeaderboard('total_to_par')">To Par${sortIcon('total_to_par')}</th>
                     </tr>
                     <tr>
                         <td></td>
