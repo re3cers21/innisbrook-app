@@ -1277,6 +1277,29 @@ document.getElementById('leaderboard-tab-net').addEventListener('click', () => {
 let teamLeaderboardSortCol = 'total_points';
 let teamLeaderboardSortDir = -1; // Descending by default
 
+// Add this function near the top-level (after showPlayersSubView is defined)
+function showTeamPage(teamName) {
+    // Switch to Players tab and Teams subtab
+    showView('players');
+    showPlayersSubView('teams');
+    // Scroll to the team container
+    setTimeout(() => {
+        let el = null;
+        if (teamName === 'Homza') {
+            el = document.getElementById('teamHomzaContainer');
+        } else if (teamName === 'Kinnaird') {
+            el = document.getElementById('teamKinnairdContainer');
+        }
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Optionally, highlight the team briefly
+            el.classList.add('ring-4', 'ring-emerald-400');
+            setTimeout(() => el.classList.remove('ring-4', 'ring-emerald-400'), 1200);
+        }
+    }, 100);
+}
+
+// Update renderTeamLeaderboard to use a link for the team name
 async function renderTeamLeaderboard() {
     const leaderboardContainer = document.getElementById('leaderboard-team');
     leaderboardContainer.innerHTML = '<div class="loader"></div>';
@@ -1290,6 +1313,7 @@ async function renderTeamLeaderboard() {
         window.teamLeaderboardData = data;
 
         function sortAndRender() {
+            const maxPoints = 10;
             const sorted = [...window.teamLeaderboardData].sort((a, b) => {
                 let aVal = a[teamLeaderboardSortCol];
                 let bVal = b[teamLeaderboardSortCol];
@@ -1319,8 +1343,12 @@ async function renderTeamLeaderboard() {
                 <tbody>`;
 
             sorted.forEach(row => {
-                html += `<tr>
-                    <td class="px-4 py-2 font-bold">${row.team}</td>
+                const isWinner = row.total_points >= maxPoints;
+                html += `<tr${isWinner ? ' style="background:#e6f9ed;font-weight:bold;"' : ''}>
+                    <td class="px-4 py-2 font-bold">
+                        <a href="#" onclick="showTeamPage('${row.team}');return false;" class="text-blue-600 underline">${row.team}</a>
+                        ${isWinner ? ' <span class="winner-badge">Winner!</span>' : ''}
+                    </td>
                     <td class="px-4 py-2 text-center">${row.points_r1 ?? '-'}</td>
                     <td class="px-4 py-2 text-center">${row.points_r2 ?? '-'}</td>
                     <td class="px-4 py-2 text-center">${row.points_r3 ?? '-'}</td>
