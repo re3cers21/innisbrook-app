@@ -1475,6 +1475,25 @@ async function renderPayoutsGamesPage() {
     });
 
     // --- Render Major Payouts tab ---
+    // Build the Player Buy-Ins table
+    let buyinTable = `<table class="min-w-full text-sm scoreboard-table mb-6">
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Closest to the Pin</th>
+                <th>First Birdie</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    buyins.forEach(b => {
+        buyinTable += `<tr>
+            <td class="px-4 py-2">${b.name}</td>
+            <td class="px-4 py-2 text-center">${b.ctp ? 'Yes' : 'No'}</td>
+            <td class="px-4 py-2 text-center">${b.first_birdie ? 'Yes' : 'No'}</td>
+        </tr>`;
+    });
+    buyinTable += `</tbody></table>`;
+
     summaryDiv.innerHTML = `
     <div class="mb-8">
         <h3 class="text-xl font-bold mb-4">Major Payouts</h3>
