@@ -1067,6 +1067,16 @@ async function renderGrossLeaderboard() {
         }
 
         function sortAndRender() {
+            // 1. Calculate rank by total_gross (lowest = 1)
+            const ranked = [...window.grossLeaderboardData]
+                .slice()
+                .sort((a, b) => a.total_gross - b.total_gross);
+            const playerIdToRank = {};
+            ranked.forEach((row, idx) => {
+                playerIdToRank[row.player_id] = idx + 1;
+            });
+
+            // 2. Sort by current sort column/direction for display
             const sorted = [...window.grossLeaderboardData].sort((a, b) => {
                 let aVal = a[grossLeaderboardSortCol];
                 let bVal = b[grossLeaderboardSortCol];
@@ -1109,9 +1119,9 @@ async function renderGrossLeaderboard() {
                 </thead>
                 <tbody>`;
 
-            sorted.forEach((row, idx) => {
+            sorted.forEach((row) => {
                 html += `<tr>
-                    <td class="px-4 py-2">${idx + 1}</td>
+                    <td class="px-4 py-2">${playerIdToRank[row.player_id]}</td>
                     <td class="px-4 py-2">${row.name}</td>
                     <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
