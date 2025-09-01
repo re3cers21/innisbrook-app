@@ -125,6 +125,7 @@ const playersView = document.getElementById('playersView');
 const dashboardView = document.getElementById('dashboardView');
 const leaderboardView = document.getElementById('leaderboardView');
 const profileView = document.getElementById('profileView');
+const moneyView = document.getElementById('moneyView');
 
 const allPlayersContainer = document.getElementById('allPlayersContainer');
 const teamsContainer = document.getElementById('teamsContainer');
@@ -148,9 +149,14 @@ function showView(viewName) {
     dashboardView.classList.add('hidden');
     leaderboardView.classList.add('hidden');
     profileView.classList.add('hidden');
+    moneyView.classList.add('hidden'); // Add this line
     tabNav.classList.remove('hidden');
 
-    if (viewName === 'players') {
+    if (viewName === 'money') {
+        moneyView.classList.remove('hidden');
+        updateActiveTab('tab-money');
+        lastActiveTab = 'money';
+    } else if (viewName === 'players') {
         playersView.classList.remove('hidden');
         updateActiveTab('tab-players');
         lastActiveTab = 'players';
@@ -861,6 +867,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
 
+    // Money tab navigation
+    document.getElementById('tab-money').addEventListener('click', () => showView('money'));
+
     // Players sub-tab navigation
     document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
     document.getElementById('subtab-teams').addEventListener('click', () => showPlayersSubView('teams'));
@@ -914,6 +923,7 @@ function showPlayerProfile(playerId) {
         dashboardView.classList.add('hidden');
         leaderboardView.classList.add('hidden');
         profileView.classList.add('hidden');
+        moneyView.classList.add('hidden'); // Hide money view if open
         tabNav.classList.add('hidden');
 
         // Show profile view
@@ -953,6 +963,7 @@ function editPlayerProfile(playerId) {
         dashboardView.classList.add('hidden');
         leaderboardView.classList.add('hidden');
         profileView.classList.add('hidden');
+        moneyView.classList.add('hidden'); // Hide money view if open
         tabNav.classList.add('hidden');
 
         // Show profile view
@@ -1019,6 +1030,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         fetchRecentRounds();
     });
     document.getElementById('tab-leaderboard').addEventListener('click', () => showView('leaderboard'));
+
+    // Money tab navigation
+    document.getElementById('tab-money').addEventListener('click', () => showView('money'));
 
     // Players sub-tab navigation
     document.getElementById('subtab-all-players').addEventListener('click', () => showPlayersSubView('all-players'));
