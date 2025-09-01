@@ -1384,3 +1384,9 @@ document.getElementById('leaderboard-tab-team').addEventListener('click', () => 
     showLeaderboardTab('team');
     renderTeamLeaderboard();
 });
+
+// Ensure Team Leaderboard loads by default when Leaderboard tab is first shown
+document.getElementById('tab-leaderboard').addEventListener('click', () => {
+    showLeaderboardTab('team');
+    renderTeamLeaderboard();
+});
