@@ -1547,3 +1547,12 @@ document.getElementById('tab-money').addEventListener('click', () => {
     showView('money');
     renderPayoutsGamesPage();
 });
+
+// Fetch buy-in counts
+const { data: buyinCounts, error } = await supabase
+  .from('event_buyin_counts')
+  .select('*')
+  .single();
+
+const ctpPayout = buyinCounts.ctp_count * 5;
+const firstBirdiePayout = buyinCounts.first_birdie_count * 5;
