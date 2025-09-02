@@ -803,7 +803,8 @@ async function renderRoundDetails(roundId) {
                         else if (row.running < 0) running = `${player2Name} +${-row.running}`;
                         else running = 'All Square';
 
-                        singlesHtml += `<tr class="${rowClass}"><td class="text-center">${row.hole_id}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                        // FIX: Always show 1-18 for hole numbers
+                        singlesHtml += `<tr class="${rowClass}"><td class="text-center">${idx + 1}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
                     });
                     singlesHtml += `</tbody></table></div></div>`;
                 });
