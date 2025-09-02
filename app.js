@@ -564,6 +564,7 @@ async function renderRoundDetails(roundId) {
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             if (roundId === 5) {
+                // Fetch and display round5_teamgame view
                 try {
                     const { data, error } = await supabase
                         .from('round5_teamgame')
@@ -583,7 +584,7 @@ async function renderRoundDetails(roundId) {
                         data.forEach(row => {
                             teamHtml += `<tr>
                                 <td class="px-4 py-2 font-semibold">${row.team}</td>
-                                <td class="px-4 py-2 text-center">${row.team_net_total ?? '-'}</td>
+                                <td class="px-4 py-2 text-center">${row.sum_net_score}</td>
                             </tr>`;
                         });
                         teamHtml += `</tbody></table>`;
@@ -591,9 +592,6 @@ async function renderRoundDetails(roundId) {
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
-                teamHtml += `</div>`;
-                container.innerHTML += teamHtml;
-                return;
             } else if (roundId === 1 || roundId === 2) {
                 if (!scores || scores.length === 0) {
                     teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
@@ -736,6 +734,8 @@ async function renderRoundDetails(roundId) {
                         });
                         teamHtml += `</tbody></table></div></div>`;
                     });
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
             } else if (roundId === 3 || roundId === 4) {
                 let singlesHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Singles Matchplay)</h4>`;
