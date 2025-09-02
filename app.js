@@ -248,15 +248,17 @@ function renderRoundSelector(rounds) {
             return acc;
         }, {});
         const selectorDiv = document.createElement('div');
-        selectorDiv.className = 'flex flex-wrap gap-3 mb-6';
-        allRounds.forEach(round => {
+        selectorDiv.className = 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6'; // Use grid for alignment
+        allRounds.forEach((round, idx) => {
             const course = round.Courses || {};
             const tee = round.Tees || {};
             const btn = document.createElement('button');
-            btn.className = `sub-tab-button px-4 py-2 rounded-md font-semibold${selectedRoundId === round.round_id ? ' active' : ''}`;
+            btn.className = `round-selector-btn px-4 py-3 rounded-lg font-semibold shadow transition-all duration-150${selectedRoundId === round.round_id ? ' active' : ''}`;
             const [year, month, day] = round.round_date.split('-');
             const correctDate = new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' });
-            btn.textContent = `${course.course_name || 'Course'} (${tee.tee_name || ''}) - ${correctDate}`;
+            btn.innerHTML = `<span class="block text-xs text-gray-500 mb-1">Round ${idx + 1}</span>
+                <span class="block">${course.course_name || 'Course'} (${tee.tee_name || ''})</span>
+                <span class="block text-xs text-gray-600">${correctDate}</span>`;
             btn.onclick = () => {
                 selectedRoundId = round.round_id;
                 renderRoundSelector(allRounds); // Only call this, not renderRoundDetails directly

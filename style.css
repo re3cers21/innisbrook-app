@@ -414,3 +414,21 @@ body.dark-mode .switch input:checked + .slider {
     font-weight: 700;
     box-shadow: 0 2px 8px 0 rgba(67,160,71,0.12);
 }
+
+.round-selector-btn {
+    background: #e6f9ed;
+    color: #388e3c;
+    border: 2px solid #a5d6a7;
+    min-width: 220px;
+    min-height: 70px;
+    text-align: left;
+    box-shadow: 0 2px 8px 0 rgba(67,160,71,0.08);
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.round-selector-btn.active,
+.round-selector-btn:hover {
+    background: linear-gradient(90deg, #43a047 60%, #a5d6a7 100%);
+    color: #fff;
+    border-color: #43a047;
+    box-shadow: 0 4px 16px 0 rgba(67,160,71,0.12);
+}
