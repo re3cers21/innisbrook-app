@@ -2025,12 +2025,12 @@ async function renderRound5TeamGame() {
         return;
     }
 
-    let html = `<h3 class="text-xl font-bold mb-4">Round 5 Team Net Totals</h3>
+    let html = `<h4 class="text-lg font-bold mb-2">Team Game - Total Net Scores</h4>
         <table class="min-w-full text-sm scoreboard-table mb-6">
             <thead>
                 <tr>
                     <th>Team</th>
-                    <th>Net Total</th>
+                    <th>Total Net Score</th>
                 </tr>
             </thead>
             <tbody>
