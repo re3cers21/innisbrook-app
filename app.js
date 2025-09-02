@@ -1146,6 +1146,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Hide loader after initial setup
     loader.classList.add('hidden');
+
+    const mobileViewToggle = document.getElementById('mobileViewToggle');
+    if (mobileViewToggle) {
+        mobileViewToggle.addEventListener('click', () => {
+            document.body.classList.toggle('mobile-view');
+            localStorage.setItem('innisbrook-mobile-view', document.body.classList.contains('mobile-view'));
+        });
+        // Restore preference on load
+        if (localStorage.getItem('innisbrook-mobile-view') === 'true') {
+            document.body.classList.add('mobile-view');
+        }
+    }
 });
 
 function getInitials(pid) {
