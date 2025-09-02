@@ -1352,7 +1352,7 @@ async function renderNetLeaderboard() {
                     <td class="px-4 py-2 text-center font-bold">${row.total_net || '-'}</td>
                     <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
                 </tr>`;
-            });
+
 
  });
 
