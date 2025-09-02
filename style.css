@@ -543,3 +543,34 @@ body.dark-mode .scoreboard-table .font-bold {
 body.dark-mode .hover\:bg-gray-50:hover {
     background: #204d2a !important;
 }
+
+/* Mobile View Option */
+body.mobile-view .scoreboard-table th,
+body.mobile-view .scoreboard-table td {
+    padding: 0.25em 0.25em;
+    font-size: 0.85em;
+}
+body.mobile-view .scoreboard-table {
+    font-size: 0.85em;
+}
+body.mobile-view .card {
+    padding: 1em !important;
+    border-radius: 1em;
+}
+body.mobile-view h1, 
+body.mobile-view h2, 
+body.mobile-view h3, 
+body.mobile-view h4, 
+body.mobile-view h5, 
+body.mobile-view h6 {
+    font-size: 1.1em !important;
+}
+body.mobile-view .flex,
+body.mobile-view .flex-wrap,
+body.mobile-view .responsive-flex {
+    flex-direction: column !important;
+    gap: 0.5em !important;
+}
+body.mobile-view .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+}
