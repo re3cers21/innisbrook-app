@@ -1249,7 +1249,7 @@ async function renderGrossLeaderboard() {
                     <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
-                    <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par r4)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
                     <td class="px-4 py-2 text-center font-bold">${row.total_gross || '-'}</td>
                     <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
