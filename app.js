@@ -145,32 +145,24 @@ window.allPlayersData = allPlayersData;
 
 // --- View & Tab Navigation ---
 function showView(viewName) {
-    playersView.classList.add('hidden');
-    dashboardView.classList.add('hidden');
-    leaderboardView.classList.add('hidden');
-    profileView.classList.add('hidden');
-    moneyView.classList.add('hidden'); // Add this line
+    // Hide all views
+    [playersView, dashboardView, leaderboardView, profileView, moneyView].forEach(v => {
+        v.classList.add('hidden');
+        v.classList.remove('page-animate');
+    });
     tabNav.classList.remove('hidden');
 
-    if (viewName === 'money') {
-        moneyView.classList.remove('hidden');
-        updateActiveTab('tab-money');
-        lastActiveTab = 'money';
-    } else if (viewName === 'players') {
-        playersView.classList.remove('hidden');
-        updateActiveTab('tab-players');
-        lastActiveTab = 'players';
-    } else if (viewName === 'dashboard') {
-        dashboardView.classList.remove('hidden');
-        updateActiveTab('tab-dashboard');
-        lastActiveTab = 'dashboard';
-    } else if (viewName === 'leaderboard') {
-        leaderboardView.classList.remove('hidden');
-        updateActiveTab('tab-leaderboard');
-        lastActiveTab = 'leaderboard';
-    } else if (viewName === 'profile') {
-        profileView.classList.remove('hidden');
-        tabNav.classList.add('hidden');
+    // Show the selected view with animation
+    let view = null;
+    if (viewName === 'money') view = moneyView;
+    else if (viewName === 'players') view = playersView;
+    else if (viewName === 'dashboard') view = dashboardView;
+    else if (viewName === 'leaderboard') view = leaderboardView;
+    else if (viewName === 'profile') view = profileView;
+
+    if (view) {
+        view.classList.remove('hidden');
+        view.classList.add('page-animate');
     }
 }
 
