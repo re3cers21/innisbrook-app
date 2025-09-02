@@ -562,6 +562,10 @@ async function renderRoundDetails(roundId) {
         }
         // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
+            if (roundId === 5) {
+                await renderRound5TeamGameScorecard(container);
+                return; // Prevents other team game logic from running for round 5
+            }
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             // Only show for rounds 1 and 2
             if (roundId === 1 || roundId === 2) {
@@ -1380,29 +1384,39 @@ let teamLeaderboardSortCol = 'total_points';
 
 let teamLeaderboardSortDir = -1; // Descending by default
 
-// Add this function near the top-level (after showPlayersSubView is defined)
-function showTeamPage(teamName) {
-    // Switch to Players tab and Teams subtab
-    showView('players');
-    showPlayersSubView('teams');
-    // Scroll to the team container
-    setTimeout(() => {
-        let el = null;
-        if (teamName === 'Homza') {
-            el = document.getElementById('teamHomzaContainer');
-        } else if (teamName === 'Kinnaird') {
-            el = document.getElementById('teamKinnairdContainer');
+// Add this helper function near the top of app.js or just above renderRoundDetails
+async function renderRound5TeamGameScorecard(container) {
+    let html = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Round 5)</h4>`;
+    try {
+        const { data: teamData, error } = await supabase
+            .from('round5_teamgame')
+            .select('*');
+        if (error) throw error;
+        if (!teamData || teamData.length === 0) {
+            html += `<div class="text-gray-500 italic">No team game data available for this round.</div></div>`;
+            container.innerHTML += html;
+            return;
         }
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // Optionally, highlight the team briefly
-            el.classList.add('ring-4', 'ring-emerald-400');
-            setTimeout(() => el.classList.remove('ring-4', 'ring-emerald-400'), 1200);
-        }
-    }, 100);
+        html += `<table class="min-w-full text-xs md:text-sm scoreboard-table border">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-2 py-1">Team</th>
+                    <th class="px-2 py-1">Net Total</th>
+                </tr>
+            </thead>
+            <tbody>`;
+        teamData.forEach(row => {
+            html += `<tr>
+                <td class="text-center font-semibold">${row.team}</td>
+                <td class="text-center">${row.team_net_total}</td>
+            </tr>`;
+        });
+        html += `</tbody></table></div>`;
+    } catch (err) {
+        html += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
+    }
+    container.innerHTML += html;
 }
-
-window.showTeamPage = showTeamPage;
 
 // Update renderTeamLeaderboard to use a link for the team name
 async function renderTeamLeaderboard() {
