@@ -563,7 +563,6 @@ async function renderRoundDetails(roundId) {
         // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-            // Only show for rounds 1 and 2
             if (roundId === 1 || roundId === 2) {
                 // Use hilo_results_round1 or hilo_results_round2
                 const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
@@ -718,7 +717,7 @@ async function renderRoundDetails(roundId) {
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
-            } else if (roundId !== 3 && roundId !== 4) {
+            } else if (roundId === 3 || roundId === 4) {
                 // Only show "Coming soon" for rounds other than 1, 2, 3, 4
                 teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
             }
@@ -823,6 +822,7 @@ function renderRecentRounds(data) {
         const par = round.total_par || 'N/A';
         let scoreToParDisplay = '';
         if (score !== 'N/A' && par !== 'N/A') {
+            const scoreToPar = score - par;
             const scoreToPar = score - par;
             if (scoreToPar > 0) {
                 scoreToParDisplay = `+${scoreToPar}`;
