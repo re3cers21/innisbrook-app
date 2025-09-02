@@ -736,8 +736,6 @@ async function renderRoundDetails(roundId) {
                         });
                         teamHtml += `</tbody></table></div></div>`;
                     });
-                } catch (err) {
-                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
             } else if (roundId === 3 || roundId === 4) {
                 let singlesHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Singles Matchplay)</h4>`;
