@@ -488,15 +488,14 @@ async function renderRoundDetails(roundId) {
                         if (score !== null && score !== undefined && score !== '') {
                             const rel = Number(score) - Number(hole.hole_par);
                             if (rel <= -2) {
-                                cellClass = 'golf-double-eagle'; // new class for double red circles
-                                cellContent = `<span class="golf-double-eagle-number">${score}</span>`;
+                                cellClass = 'golf-eagle';
+                                cellContent = `<span class="golf-eagle-number">${score}</span>`;
                             } else if (rel === -1) {
                                 cellClass = 'golf-birdie';
                             } else if (rel === 1) {
                                 cellClass = 'golf-bogey';
                             } else if (rel >= 2) {
-                                cellClass = 'golf-double-bogey-double'; // new class for double black boxes
-                                cellContent = `<span class="golf-double-bogey-double-number">${score}</span>`;
+                                cellClass = 'golf-double-bogey';
                             }
                             total += Number(score);
                             if (idx < 9) out += Number(score);
@@ -541,15 +540,14 @@ async function renderRoundDetails(roundId) {
                         if (net !== null && net !== undefined && net !== '') {
                             const rel = Number(net) - Number(hole.hole_par);
                             if (rel <= -2) {
-                                cellClass = 'golf-double-eagle'; // new class for double red circles
-                                cellContent = `<span class="golf-double-eagle-number">${score}</span>`;
+                                cellClass = 'golf-eagle';
+                                cellContent = `<span class="golf-eagle-number">${net}</span>`;
                             } else if (rel === -1) {
                                 cellClass = 'golf-birdie';
                             } else if (rel === 1) {
                                 cellClass = 'golf-bogey';
                             } else if (rel >= 2) {
-                                cellClass = 'golf-double-bogey-double'; // new class for double black boxes
-                                cellContent = `<span class="golf-double-bogey-double-number">${score}</span>`;
+                                cellClass = 'golf-double-bogey';
                             }
                             total += Number(net);
                             if (idx < 9) out += Number(net);
