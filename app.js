@@ -560,14 +560,10 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += netHtml;
             }
         }
-        // TEAM GAME (Hi-Lo or Round 5)
+        // TEAM GAME (Hi-Lo)
         if (window.scorecardTypeState[roundId].team) {
-            if (roundId === 5) {
-                // Render Round 5 Team Game results
-                await renderRound5TeamGame();
-                return;
-            }
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
+            // Only show for rounds 1 and 2
             if (roundId === 1 || roundId === 2) {
                 // Use hilo_results_round1 or hilo_results_round2
                 const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
@@ -722,7 +718,7 @@ async function renderRoundDetails(roundId) {
                 } catch (err) {
                     teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
-            } else if (roundId === 3 || roundId === 4) {
+            } else if (roundId !== 3 && roundId !== 4) {
                 // Only show "Coming soon" for rounds other than 1, 2, 3, 4
                 teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
             }
@@ -1352,9 +1348,7 @@ async function renderNetLeaderboard() {
                     <td class="px-4 py-2 text-center font-bold">${row.total_net || '-'}</td>
                     <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
                 </tr>`;
-
-
- });
+            });
 
             html += `</tbody></table>`;
             leaderboardContainer.innerHTML = html;
@@ -1742,7 +1736,7 @@ async function renderPlayerHandicapsTab(playerId) {
                             ${courses.map(c => `<option value="${c.course_id}" ${c.course_id === selectedCourseId ? 'selected' : ''}>${c.course_name}</option>`).join('')}
                         </select>
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
                         </span>
                     </div>
                 </div>
@@ -1753,7 +1747,7 @@ async function renderPlayerHandicapsTab(playerId) {
                             ${teesForCourse.map(t => `<option value="${t.tee_id}" ${t.tee_id === selectedTeeId ? 'selected' : ''}>${t.tee_name}</option>`).join('')}
                         </select>
                         <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7M4 10v10a1 1 0 001 1h3m10-11v10a1 1 0 01-1 1h-3m-4 0h4" /></svg>
                         </span>
                     </div>
                 </div>
@@ -1864,38 +1858,23 @@ async function renderPlayerCompareTab(playerId) {
             <div class="flex flex-wrap gap-4 mb-4 items-end">
                 <div>
                     <label class="block text-sm font-semibold mb-1">Round</label>
-                    <div class="relative">
-                        <select id="compareRoundSelect" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
-                            ${rounds.map(r => `<option value="${r.round_id}" ${r.round_id === selectedRoundId ? 'selected' : ''}>Round ${r.round_number} - ${r.Courses?.course_name || ''} (${r.round_date})</option>`).join('')}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
-                        </span>
-                    </div>
+                    <select id="compareRoundSelect" class="border rounded px-3 py-2">
+                        ${rounds.map(r => `<option value="${r.round_id}" ${r.round_id === selectedRoundId ? 'selected' : ''}>Round ${r.round_number} - ${r.Courses?.course_name || ''} (${r.round_date})</option>`).join('')}
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Score Type</label>
-                    <div class="relative">
-                        <select id="compareScoreType" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
-                            <option value="gross" ${selectedScoreType === 'gross' ? 'selected' : ''}>Gross</option>
-                            <option value="net" ${selectedScoreType === 'net' ? 'selected' : ''}>Net</option>
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
-                        </span>
-                    </div>
+                    <select id="compareScoreType" class="border rounded px-3 py-2">
+                        <option value="gross" ${selectedScoreType === 'gross' ? 'selected' : ''}>Gross</option>
+                        <option value="net" ${selectedScoreType === 'net' ? 'selected' : ''}>Net</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-semibold mb-1">Add Player</label>
-                    <div class="relative">
-                        <select id="compareAddPlayer" class="block w-full px-4 py-2 pr-8 rounded-lg border border-emerald-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 transition text-gray-800 font-semibold">
-                            <option value="">Select...</option>
-                            ${availablePlayers.map(p => `<option value="${p.player_id}">${p.name} (${p.team})</option>`).join('')}
-                        </select>
-                        <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-emerald-400">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
-                        </span>
-                    </div>
+                    <select id="compareAddPlayer" class="border rounded px-3 py-2">
+                        <option value="">Select...</option>
+                        ${availablePlayers.map(p => `<option value="${p.player_id}">${p.name} (${p.team})</option>`).join('')}
+                    </select>
                 </div>
             </div>
             <div class="mb-2">
@@ -2015,41 +1994,6 @@ async function renderPlayerCompareTab(playerId) {
     }
 
     render();
-}
-
-// --- Round 5 Team Game Results ---
-async function renderRound5TeamGame() {
-    const container = document.getElementById('round5TeamGameContainer');
-    container.innerHTML = '<div class="loader"></div>';
-
-    // Fetch team net totals for round 5
-    const { data, error } = await supabase
-        .from('round5_teamgame')
-        .select('*');
-    if (error) {
-        container.innerHTML = `<div class="text-red-500 italic">Error loading Round 5 team game results: ${error.message}</div>`;
-        return;
-    }
-
-    let html = `<h4 class="text-lg font-bold mb-2">Team Game - Total Net Scores</h4>
-        <table class="min-w-full text-sm scoreboard-table mb-6">
-            <thead>
-                <tr>
-                    <th>Team</th>
-                    <th>Total Net Score</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${data.map(row => `
-                    <tr>
-                        <td class="px-4 py-2 text-center font-semibold">${row.team}</td>
-                        <td class="px-4 py-2 text-center">${row.team_net_total}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>`;
-
-    container.innerHTML = html;
 }
 
 
