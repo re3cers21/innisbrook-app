@@ -597,22 +597,81 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += teamHtml;
                 return;
             } else if (roundId === 1 || roundId === 2) {
-                if (!scores || scores.length === 0) {
-                    teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
-                } else {
-                    // Group by match_number (fallback to 'A' if undefined)
-                    const matches = {};
-                    scores.forEach(row => {
-                        const matchNum = row.match_number !== undefined && row.match_number !== null ? row.match_number : 'A';
-                        if (!matches[matchNum]) matches[matchNum] = [];
-                        matches[matchNum].push(row);
-                    });
+                try {
+                    // Fetch Hi-Lo matchups for this round
+                    const { data: hiloMatches, error: hiloError } = await supabase
+                        .from('hilo_matchups')
+                        .select('*')
+                        .eq('round_id', roundId);
+                    if (hiloError) throw hiloError;
+                    if (!hiloMatches || hiloMatches.length === 0) {
+                        teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
+                    } else {
+                        // Group by match_number
+                        const matches = {};
+                        hiloMatches.forEach(row => {
+                            if (!matches[row.match_number]) matches[row.match_number] = [];
+                            matches[row.match_number].push(row);
+                        });
 
-                    Object.keys(matches).forEach(matchNum => {
-                        const match = matches[matchNum];
-                        teamHtml += `<div class="mb-4"><strong>Match ${matchNum !== 'A' ? matchNum : ''}</strong></div>`;
-                        // ...render match details...
-                    });
+                        Object.keys(matches).forEach(matchNum => {
+                            const match = matches[matchNum];
+                            const firstRow = match[0];
+                            // Get player names
+                            const player1 = window.allPlayers.find(p => p.player_id == firstRow.player1_id);
+                            const player2 = window.allPlayers.find(p => p.player_id == firstRow.player2_id);
+                            const player1Name = player1 ? player1.name : `Player ${firstRow.player1_id}`;
+                            const player2Name = player2 ? player2.name : `Player ${firstRow.player2_id}`;
+
+                            // Determine match winner by last running score
+                            let matchWinner = '';
+                            if (match.length > 0) {
+                                const lastRow = match[match.length - 1];
+                                if (lastRow.running > 0) matchWinner = player1Name;
+                                else if (lastRow.running < 0) matchWinner = player2Name;
+                            }
+
+                            // Highlight winner
+                            const p1Highlight = matchWinner === player1Name ? 'text-emerald-600 font-bold' : '';
+                            const p2Highlight = matchWinner === player2Name ? 'text-emerald-600 font-bold' : '';
+
+                            teamHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                            teamHtml += `<div class="flex items-center justify-between mb-2">`;
+                            teamHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${p1Highlight}">${player1Name}</span> vs <span class="${p2Highlight}">${player2Name}</span></h5>`;
+                            if (matchWinner) {
+                                teamHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                            }
+                            teamHtml += `</div>`;
+                            // Table
+                            teamHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                            teamHtml += `<thead class="bg-gray-50"><tr>`;
+                            teamHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${player1Name}</th><th class="px-2 py-1">${player2Name}</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
+                            teamHtml += `</tr></thead><tbody>`;
+                            match.forEach((row, idx) => {
+                                let result = '';
+                                let rowClass = '';
+                                if (row.hole_result === 1) {
+                                    result = `${player1Name} wins`;
+                                    rowClass = 'bg-emerald-50 font-semibold';
+                                } else if (row.hole_result === -1) {
+                                    result = `${player2Name} wins`;
+                                    rowClass = 'bg-blue-50 font-semibold';
+                                } else {
+                                    result = 'Halved';
+                                    rowClass = 'bg-gray-50';
+                                }
+                                let running = '';
+                                if (row.running > 0) running = `${player1Name} +${row.running}`;
+                                else if (row.running < 0) running = `${player2Name} +${-row.running}`;
+                                else running = 'All Square';
+
+                                teamHtml += `<tr class="${rowClass}"><td class="text-center">${row.hole_id}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                            });
+                            teamHtml += `</tbody></table></div></div>`;
+                        });
+                    }
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
                 teamHtml += `</div>`;
                 container.innerHTML += teamHtml;
