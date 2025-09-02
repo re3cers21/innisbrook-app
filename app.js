@@ -823,7 +823,6 @@ function renderRecentRounds(data) {
         let scoreToParDisplay = '';
         if (score !== 'N/A' && par !== 'N/A') {
             const scoreToPar = score - par;
-            const scoreToPar = score - par;
             if (scoreToPar > 0) {
                 scoreToParDisplay = `+${scoreToPar}`;
             } else if (scoreToPar < 0) {
