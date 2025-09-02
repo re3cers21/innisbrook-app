@@ -956,7 +956,7 @@ function showPlayerProfile(playerId) {
     playersView.classList.add('hidden');
     dashboardView.classList.add('hidden');
     leaderboardView.classList.add('hidden');
-    profileView.classList.remove('hidden');
+    profileView.classList.add('hidden');
     moneyView.classList.add('hidden');
     tabNav.classList.add('hidden');
 
