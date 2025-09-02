@@ -560,26 +560,47 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += netHtml;
             }
         }
-        // TEAM GAME (Hi-Lo)
+        // TEAM GAME (Hi-Lo or Round 5)
         if (window.scorecardTypeState[roundId].team) {
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
-            // Only show for rounds 1 and 2
-            if (roundId === 1 || roundId === 2) {
-                // Use hilo_results_round1 or hilo_results_round2
-                const hiloView = roundId === 1 ? 'hilo_results_round1' : 'hilo_results_round2';
+            if (roundId === 5) {
                 try {
-                    const { data: hiloData, error: hiloError } = await supabase
-                        .from(hiloView)
+                    const { data, error } = await supabase
+                        .from('round5_teamgame')
                         .select('*');
-                    if (hiloError) throw hiloError;
-                    if (!hiloData || hiloData.length === 0) {
-                        teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div></div>`;
-                        container.innerHTML += teamHtml;
-                        return;
+                    if (error) throw error;
+                    if (!data || data.length === 0) {
+                        teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
+                    } else {
+                        teamHtml += `<table class="min-w-full text-sm scoreboard-table mb-4">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-2 text-left font-bold">Team</th>
+                                    <th class="px-4 py-2 text-center font-bold">Sum of Net Scores</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                        data.forEach(row => {
+                            teamHtml += `<tr>
+                                <td class="px-4 py-2 font-semibold">${row.team}</td>
+                                <td class="px-4 py-2 text-center">${row.team_net_total ?? '-'}</td>
+                            </tr>`;
+                        });
+                        teamHtml += `</tbody></table>`;
                     }
+                } catch (err) {
+                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
+                }
+                teamHtml += `</div>`;
+                container.innerHTML += teamHtml;
+                return;
+            } else if (roundId === 1 || roundId === 2) {
+                if (!scores || scores.length === 0) {
+                    teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
+                } else {
                     // Group by match_number
                     const matches = {};
-                    hiloData.forEach(row => {
+                    scores.forEach(row => {
                         if (!matches[row.match_number]) matches[row.match_number] = [];
                         matches[row.match_number].push(row);
                     });
@@ -715,15 +736,88 @@ async function renderRoundDetails(roundId) {
                         });
                         teamHtml += `</tbody></table></div></div>`;
                     });
-                } catch (err) {
-                    teamHtml += `<div class="text-red-500 italic">Error loading team game data: ${err.message}</div>`;
                 }
-            } else if (roundId !== 3 && roundId !== 4) {
-                // Only show "Coming soon" for rounds other than 1, 2, 3, 4
-                teamHtml += `<div class="text-gray-500 italic">Coming soon: Team game scorecard will be displayed here.</div>`;
+            } else if (roundId === 3 || roundId === 4) {
+                let singlesHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game (Singles Matchplay)</h4>`;
+                const singlesView = roundId === 3 ? 'singles_results_round3' : 'singles_results_round4';
+                try {
+                    const { data: singlesData, error: singlesError } = await supabase
+                        .from(singlesView)
+                        .select('*');
+                    if (singlesError) throw singlesError;
+                    if (!singlesData || singlesData.length === 0) {
+                        singlesHtml += `<div class="text-gray-500 italic">No singles matchplay data available for this round.</div></div>`;
+                        container.innerHTML += singlesHtml;
+                        return;
+                    }
+                    // Group by match_number
+                    const matches = {};
+                    singlesData.forEach(row => {
+                        if (!matches[row.match_number]) matches[row.match_number] = [];
+                        matches[row.match_number].push(row);
+                    });
+
+                    Object.keys(matches).forEach(matchNum => {
+                        const match = matches[matchNum];
+                        const firstRow = match[0];
+                        // Get player names
+                        const player1 = window.allPlayers.find(p => p.player_id == firstRow.player1_id);
+                        const player2 = window.allPlayers.find(p => p.player_id == firstRow.player2_id);
+                        const player1Name = player1 ? player1.name : `Player ${firstRow.player1_id}`;
+                        const player2Name = player2 ? player2.name : `Player ${firstRow.player2_id}`;
+
+                        // Determine match winner by last running score
+                        let matchWinner = '';
+                        if (match.length > 0) {
+                            const lastRow = match[match.length - 1];
+                            if (lastRow.running > 0) matchWinner = player1Name;
+                            else if (lastRow.running < 0) matchWinner = player2Name;
+                        }
+
+                        // Highlight winner
+                        const p1Highlight = matchWinner === player1Name ? 'text-emerald-600 font-bold' : '';
+                        const p2Highlight = matchWinner === player2Name ? 'text-emerald-600 font-bold' : '';
+
+                        singlesHtml += `<div class="mb-8 p-4 card border-2 ${matchWinner ? 'border-emerald-500' : 'border-gray-200'} shadow fade-in">`;
+                        singlesHtml += `<div class="flex items-center justify-between mb-2">`;
+                        singlesHtml += `<h5 class="font-semibold text-lg">Match ${matchNum}: <span class="${p1Highlight}">${player1Name}</span> vs <span class="${p2Highlight}">${player2Name}</span></h5>`;
+                        if (matchWinner) {
+                            singlesHtml += `<span class="px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-xs ml-4">Winner: ${matchWinner}</span>`;
+                        }
+                        singlesHtml += `</div>`;
+                        // Table
+                        singlesHtml += `<div class="overflow-x-auto"><table class="min-w-full text-xs md:text-sm scoreboard-table border">`;
+                        singlesHtml += `<thead class="bg-gray-50"><tr>`;
+                        singlesHtml += `<th class="px-2 py-1">Hole</th><th class="px-2 py-1">${player1Name}</th><th class="px-2 py-1">${player2Name}</th><th class="px-2 py-1">Result</th><th class="px-2 py-1">Running</th>`;
+                        singlesHtml += `</tr></thead><tbody>`;
+                        match.forEach((row, idx) => {
+                            let result = '';
+                            let rowClass = '';
+                            if (row.hole_result === 1) {
+                                result = `${player1Name} wins`;
+                                rowClass = 'bg-emerald-50 font-semibold';
+                            } else if (row.hole_result === -1) {
+                                result = `${player2Name} wins`;
+                                rowClass = 'bg-blue-50 font-semibold';
+                            } else {
+                                result = 'Halved';
+                                rowClass = 'bg-gray-50';
+                            }
+                            let running = '';
+                            if (row.running > 0) running = `${player1Name} +${row.running}`;
+                            else if (row.running < 0) running = `${player2Name} +${-row.running}`;
+                            else running = 'All Square';
+
+                            singlesHtml += `<tr class="${rowClass}"><td class="text-center">${row.hole_id}</td><td class="text-center">${row.player1_net}</td><td class="text-center">${row.player2_net}</td><td class="text-center">${result}</td><td class="text-center">${running}</td></tr>`;
+                        });
+                        singlesHtml += `</tbody></table></div></div>`;
+                    });
+                } catch (err) {
+                    singlesHtml += `<div class="text-red-500 italic">Error loading singles matchplay data: ${err.message}</div>`;
+                }
+                singlesHtml += `</div>`;
+                container.innerHTML += singlesHtml;
             }
-            teamHtml += `</div>`;
-            container.innerHTML += teamHtml;
         }
         // SINGLES MATCHPLAY for Rounds 3 and 4
         if ((roundId === 3 || roundId === 4) && window.scorecardTypeState[roundId].team) {
