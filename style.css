@@ -123,13 +123,57 @@ body {
 }
 
 body.dark-mode {
-    background: linear-gradient(135deg, #102415 0%, #183c1a 100%);
-    background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
-    background-size: cover;
-    background-attachment: fixed;
-    background-blend-mode: multiply;
+    background: #14281a !important;
+    color: #e0ffe0 !important;
 }
 
+body.dark-mode .card,
+body.dark-mode .scoreboard-table,
+body.dark-mode .bg-white,
+body.dark-mode .bg-gray-50 {
+    background: #183c1a !important;
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table th,
+body.dark-mode .scoreboard-table td {
+    color: #e0ffe0 !important;
+    border-color: #204d2a !important;
+}
+
+body.dark-mode .scoreboard-table tr.bg-gray-50 {
+    background: #204d2a !important;
+}
+
+body.dark-mode .scoreboard-table tr.bg-emerald-50 {
+    background: #204d2a !important;
+}
+
+body.dark-mode .scoreboard-table tr.bg-blue-50 {
+    background: #204d2a !important;
+}
+
+body.dark-mode .round-selector-btn {
+    background: #204d2a !important;
+    color: #e0ffe0 !important;
+    border-color: #43a047 !important;
+}
+
+body.dark-mode .round-selector-btn.active,
+body.dark-mode .round-selector-btn:hover {
+    background: linear-gradient(90deg, #2e7d32 60%, #43a047 100%) !important;
+    color: #fff !important;
+    border-color: #43a047 !important;
+}
+
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4, 
+body.dark-mode h5, 
+body.dark-mode h6 {
+    color: #b9f6ca !important;
+}
 .dark-mode header,
 .dark-mode .bg-white,
 .dark-mode .bg-gray-50,
