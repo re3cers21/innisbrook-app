@@ -700,3 +700,43 @@ body.dark-mode .hover\:bg-gray-50:hover {
         white-space: nowrap !important;
     }
 }
+
+/* Ultra-compact mobile header and top-right dark mode toggle */
+@media (max-width: 600px) {
+    header {
+        padding: 0.15em 0 !important;
+        min-height: 0 !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        position: relative !important;
+    }
+    header .flex.items-center.space-x-6 {
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.3em !important;
+        margin-bottom: 0 !important;
+    }
+    .w-24, .h-24 {
+        width: 28px !important;
+        height: 28px !important;
+        margin-right: 0.3em !important;
+    }
+    h1, .text-2xl, .md\:text-3xl {
+        font-size: 1em !important;
+        margin: 0 !important;
+        font-weight: 700 !important;
+        line-height: 1.1 !important;
+    }
+    #darkModeToggle {
+        position: absolute !important;
+        top: 8px !important;
+        right: 12px !important;
+        margin: 0 !important;
+        padding: 0.2em !important;
+        width: 28px !important;
+        height: 28px !important;
+        z-index: 20 !important;
+        background: #fff !important;
+        box-shadow: 0 2px 8px rgba(67,160,71,0.08);
+    }
+}
