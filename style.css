@@ -543,3 +543,75 @@ body.dark-mode .scoreboard-table .font-bold {
 body.dark-mode .hover\:bg-gray-50:hover {
     background: #204d2a !important;
 }
+
+/* One-stop mobile optimization for screens <= 600px */
+@media (max-width: 600px) {
+    header {
+        padding: 0.5em 0 !important;
+    }
+    .w-24, .h-24 {
+        width: 40px !important;
+        height: 40px !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 1em !important;
+        margin-bottom: 0.3em !important;
+    }
+    #tab-nav {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        gap: 0.2em !important;
+        padding-bottom: 0.2em !important;
+        scrollbar-width: thin;
+    }
+    .tab-button, .sub-tab-button, .leaderboard-subtab-button, .payouts-subtab-button {
+        font-size: 0.95em !important;
+        padding: 0.4em 0.6em !important;
+        min-width: 90px;
+        margin: 0 !important;
+    }
+    .card {
+        padding: 0.5em !important;
+        border-radius: 0.5em !important;
+        margin: 0.5em 0 !important;
+        box-shadow: none !important;
+    }
+    .scoreboard-table th,
+    .scoreboard-table td {
+        padding: 0.18em 0.12em !important;
+        font-size: 0.8em !important;
+        min-width: 2em;
+    }
+    .scoreboard-table {
+        font-size: 0.8em !important;
+        margin-bottom: 0.3em !important;
+    }
+    .scoreboard-table-wrapper,
+    .overflow-x-auto {
+        width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .flex,
+    .flex-wrap,
+    .responsive-flex {
+        flex-direction: column !important;
+        gap: 0.5em !important;
+    }
+    .mb-8, .mb-6, .mb-4 {
+        margin-bottom: 0.5em !important;
+    }
+    .space-y-4, .space-y-12 {
+        gap: 0.5em !important;
+    }
+    .max-w-7xl, .max-w-2xl {
+        max-width: 100vw !important;
+        padding: 0 !important;
+    }
+    .p-8, .p-6, .p-4 {
+        padding: 0.5em !important;
+    }
+    .rounded-full {
+        border-radius: 0.5em !important;
+    }
+}
