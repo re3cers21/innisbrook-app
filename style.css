@@ -574,3 +574,70 @@ body.mobile-view .responsive-flex {
 body.mobile-view .overflow-x-auto {
     -webkit-overflow-scrolling: touch;
 }
+
+/* Compact Mobile View Improvements */
+@media (max-width: 600px) {
+    body,
+    #appContainer {
+        padding: 0 !important;
+        font-size: 0.95em !important;
+    }
+    .card {
+        padding: 0.5em !important;
+        border-radius: 0.5em !important;
+        box-shadow: none !important;
+        margin: 0.5em 0 !important;
+    }
+    .scoreboard-table th,
+    .scoreboard-table td {
+        padding: 0.25em 0.15em !important;
+        font-size: 0.85em !important;
+        min-width: 2.2em;
+    }
+    .scoreboard-table {
+        font-size: 0.85em !important;
+        margin-bottom: 0.5em !important;
+    }
+    .tab-button,
+    .sub-tab-button,
+    .leaderboard-subtab-button,
+    .payouts-subtab-button {
+        padding: 0.5em 0.5em !important;
+        font-size: 0.95em !important;
+        margin: 0.1em !important;
+    }
+    .flex,
+    .flex-wrap,
+    .responsive-flex {
+        flex-direction: column !important;
+        gap: 0.5em !important;
+    }
+    .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Hide long text in table headers, abbreviate if needed */
+    .scoreboard-table th {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 4em;
+    }
+    /* Reduce heading sizes */
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 1em !important;
+        margin-bottom: 0.5em !important;
+    }
+    /* Reduce space in profile view and player cards */
+    #profileView .card,
+    .player-tab-content,
+    .player-subtab-button {
+        padding: 0.5em !important;
+        font-size: 0.95em !important;
+    }
+    /* Make tables scrollable */
+    .scoreboard-table-wrapper,
+    .overflow-x-auto {
+        width: 100%;
+        overflow-x: auto !important;
+    }
+}
