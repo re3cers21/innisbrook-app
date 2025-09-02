@@ -641,3 +641,80 @@ body.mobile-view .overflow-x-auto {
         overflow-x: auto !important;
     }
 }
+
+/* Mobile View: Make everything compact and clean */
+body.mobile-view header {
+    padding: 0.5em 0 !important;
+}
+body.mobile-view .w-24, body.mobile-view .h-24 {
+    width: 48px !important;
+    height: 48px !important;
+}
+body.mobile-view h1 {
+    font-size: 1.1em !important;
+    margin-bottom: 0.2em !important;
+}
+body.mobile-view nav#tab-nav {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 0.2em !important;
+    padding-bottom: 0.2em !important;
+}
+body.mobile-view .tab-button {
+    font-size: 0.95em !important;
+    padding: 0.4em 0.6em !important;
+    margin: 0 !important;
+    min-width: 90px;
+}
+body.mobile-view .card {
+    padding: 0.5em !important;
+    border-radius: 0.5em !important;
+    box-shadow: none !important;
+    margin: 0.5em 0 !important;
+}
+body.mobile-view .scoreboard-table th,
+body.mobile-view .scoreboard-table td {
+    padding: 0.18em 0.12em !important;
+    font-size: 0.8em !important;
+    min-width: 2em;
+}
+body.mobile-view .scoreboard-table {
+    font-size: 0.8em !important;
+    margin-bottom: 0.3em !important;
+}
+body.mobile-view .scoreboard-table-wrapper,
+body.mobile-view .overflow-x-auto {
+    width: 100%;
+    overflow-x: auto !important;
+}
+body.mobile-view h2, body.mobile-view h3, body.mobile-view h4, body.mobile-view h5, body.mobile-view h6 {
+    font-size: 1em !important;
+    margin-bottom: 0.3em !important;
+}
+body.mobile-view .mb-8, body.mobile-view .mb-6, body.mobile-view .mb-4 {
+    margin-bottom: 0.5em !important;
+}
+body.mobile-view .space-y-4, body.mobile-view .space-y-12 {
+    gap: 0.5em !important;
+}
+body.mobile-view .max-w-7xl, body.mobile-view .max-w-2xl {
+    max-width: 100vw !important;
+    padding: 0 !important;
+}
+body.mobile-view .p-8, body.mobile-view .p-6, body.mobile-view .p-4 {
+    padding: 0.5em !important;
+}
+body.mobile-view .rounded-full {
+    border-radius: 0.5em !important;
+}
+body.mobile-view .hidden-mobile {
+    display: none !important;
+}
+
+/* Hide less important columns in tables for mobile view */
+@media (max-width: 600px) {
+    body.mobile-view .scoreboard-table th:nth-child(n+10),
+    body.mobile-view .scoreboard-table td:nth-child(n+10) {
+        display: none !important;
+    }
+}
