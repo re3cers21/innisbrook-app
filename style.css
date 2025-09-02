@@ -137,20 +137,40 @@ body.dark-mode .bg-gray-50 {
 
 body.dark-mode .scoreboard-table th,
 body.dark-mode .scoreboard-table td {
+    background: #183c1a !important;
     color: #e0ffe0 !important;
     border-color: #204d2a !important;
 }
 
-body.dark-mode .scoreboard-table tr.bg-gray-50 {
+body.dark-mode .scoreboard-table thead th {
     background: #204d2a !important;
+    color: #b9f6ca !important;
 }
 
-body.dark-mode .scoreboard-table tr.bg-emerald-50 {
-    background: #204d2a !important;
-}
-
+body.dark-mode .scoreboard-table tr.bg-gray-50,
+body.dark-mode .scoreboard-table tr.bg-emerald-50,
 body.dark-mode .scoreboard-table tr.bg-blue-50 {
     background: #204d2a !important;
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table td.text-gray-500,
+body.dark-mode .scoreboard-table th.text-gray-500 {
+    color: #b9f6ca !important;
+}
+
+body.dark-mode .scoreboard-table td.text-gray-900,
+body.dark-mode .scoreboard-table th.text-gray-900 {
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table td.text-xs,
+body.dark-mode .scoreboard-table th.text-xs {
+    color: #b9f6ca !important;
+}
+
+body.dark-mode .scoreboard-table .font-bold {
+    color: #fff !important;
 }
 
 body.dark-mode .round-selector-btn {
@@ -475,4 +495,48 @@ body.dark-mode .switch input:checked + .slider {
     color: #fff;
     border-color: #43a047;
     box-shadow: 0 4px 16px 0 rgba(67,160,71,0.12);
+}
+
+/* Dark mode overrides for Rounds Page scorecards */
+body.dark-mode .scoreboard-table {
+    background: #183c1a !important;
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table th,
+body.dark-mode .scoreboard-table td {
+    background: #183c1a !important;
+    color: #e0ffe0 !important;
+    border-color: #204d2a !important;
+}
+
+body.dark-mode .scoreboard-table thead th {
+    background: #204d2a !important;
+    color: #b9f6ca !important;
+}
+
+body.dark-mode .scoreboard-table tr.bg-gray-50,
+body.dark-mode .scoreboard-table tr.bg-emerald-50,
+body.dark-mode .scoreboard-table tr.bg-blue-50 {
+    background: #204d2a !important;
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table td.text-gray-500,
+body.dark-mode .scoreboard-table th.text-gray-500 {
+    color: #b9f6ca !important;
+}
+
+body.dark-mode .scoreboard-table td.text-gray-900,
+body.dark-mode .scoreboard-table th.text-gray-900 {
+    color: #e0ffe0 !important;
+}
+
+body.dark-mode .scoreboard-table td.text-xs,
+body.dark-mode .scoreboard-table th.text-xs {
+    color: #b9f6ca !important;
+}
+
+body.dark-mode .scoreboard-table .font-bold {
+    color: #fff !important;
 }
