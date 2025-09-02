@@ -569,7 +569,6 @@ async function renderRoundDetails(roundId) {
                         .from('round5_teamgame')
                         .select('*');
                     if (error) throw error;
-                    console.log('DEBUG round5_teamgame:', data); // Add this line
                     if (!data || data.length === 0) {
                         teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
                     } else {
@@ -584,7 +583,7 @@ async function renderRoundDetails(roundId) {
                         data.forEach(row => {
                             teamHtml += `<tr>
                                 <td class="px-4 py-2 font-semibold">${row.team}</td>
-                                <td class="px-4 py-2 text-center">${row.sum_net_score ?? row.sum_net_scores ?? row.total_net ?? '-'}</td>
+                                <td class="px-4 py-2 text-center">${row.team_net_total ?? '-'}</td>
                             </tr>`;
                         });
                         teamHtml += `</tbody></table>`;
