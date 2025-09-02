@@ -152,6 +152,28 @@ function showView(viewName) {
     });
     tabNav.classList.remove('hidden');
 
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        btn.classList.add('text-gray-500');
+        btn.classList.remove('text-gray-900');
+    });
+
+    // Add active class to the current tab button
+    let activeTabId = '';
+    if (viewName === 'players') activeTabId = 'tab-players';
+    else if (viewName === 'dashboard') activeTabId = 'tab-dashboard';
+    else if (viewName === 'leaderboard') activeTabId = 'tab-leaderboard';
+    else if (viewName === 'money') activeTabId = 'tab-money';
+
+    if (activeTabId) {
+        const activeBtn = document.getElementById(activeTabId);
+        if (activeBtn) {
+            activeBtn.classList.add('active', 'text-gray-900');
+            activeBtn.classList.remove('text-gray-500');
+        }
+    }
+
     // Show the selected view with animation
     let view = null;
     if (viewName === 'money') view = moneyView;
@@ -1227,7 +1249,7 @@ async function renderGrossLeaderboard() {
                     <td class="px-4 py-2 text-center">${row.gross_r1 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r1)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r2 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r2)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r3 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r3)}</span></td>
-                    <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r4)}</span></td>
+                    <td class="px-4 py-2 text-center">${row.gross_r4 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par r4)}</span></td>
                     <td class="px-4 py-2 text-center">${row.gross_r5 || '-'}<br><span class="text-xs text-gray-500">${toParStr(row.to_par_r5)}</span></td>
                     <td class="px-4 py-2 text-center font-bold">${row.total_gross || '-'}</td>
                     <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
