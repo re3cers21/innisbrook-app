@@ -615,3 +615,37 @@ body.dark-mode .hover\:bg-gray-50:hover {
         border-radius: 0.5em !important;
     }
 }
+
+/* Mobile navigation minimization */
+@media (max-width: 600px) {
+    #tab-nav {
+        height: 44px !important;
+        min-height: 0 !important;
+        font-size: 0.95em !important;
+        padding: 0 !important;
+        margin-bottom: 0.2em !important;
+        overflow-x: auto !important;
+        scrollbar-width: thin;
+        background: #183c1a;
+        border-radius: 0.5em;
+        box-shadow: 0 2px 8px rgba(16,36,21,0.08);
+        transition: max-height 0.2s;
+    }
+    #tab-nav.minimized {
+        max-height: 0 !important;
+        height: 0 !important;
+        padding: 0 !important;
+        margin-bottom: 0 !important;
+        overflow: hidden !important;
+        opacity: 0.1;
+        pointer-events: none;
+    }
+    #mobileNavToggle {
+        display: block !important;
+    }
+}
+@media (min-width: 601px) {
+    #mobileNavToggle {
+        display: none !important;
+    }
+}

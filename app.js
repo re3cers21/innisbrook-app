@@ -2013,4 +2013,26 @@ async function renderPlayerCompareTab(playerId) {
     render();
 }
 
+// --- Mobile Navigation Toggle ---
+document.addEventListener('DOMContentLoaded', () => {
+    const mobileNavToggle = document.getElementById('mobileNavToggle');
+    const tabNav = document.getElementById('tab-nav');
+    if (mobileNavToggle && tabNav) {
+        let navVisible = true;
+        mobileNavToggle.addEventListener('click', () => {
+            navVisible = !navVisible;
+            if (navVisible) {
+                tabNav.classList.remove('minimized');
+                mobileNavToggle.textContent = 'Hide Navigation';
+            } else {
+                tabNav.classList.add('minimized');
+                mobileNavToggle.textContent = 'Show Navigation';
+            }
+        });
+        // Default: show navigation
+        tabNav.classList.remove('minimized');
+        mobileNavToggle.textContent = 'Hide Navigation';
+    }
+});
+
 
