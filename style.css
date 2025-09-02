@@ -1,6 +1,42 @@
 /* Team Game Table Enhancements */
 .scoreboard-table th, .scoreboard-table td {
-    padding: 0.5em 0.75em;
+        padding: 0.5em 0.5em;
+        font-size: 0.95em;
+}
+
+@media (max-width: 640px) {
+    .scoreboard-table th, .scoreboard-table td {
+        padding: 0.35em 0.25em;
+        font-size: 0.85em;
+    }
+    .scoreboard-table {
+        font-size: 0.85em;
+    }
+    .card {
+        padding: 1em !important;
+        border-radius: 1em;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-size: 1.1em !important;
+    }
+}
+
+.scoreboard-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.responsive-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+}
+@media (max-width: 640px) {
+    .responsive-flex {
+        flex-direction: column;
+        gap: 0.5em;
+    }
+}
     text-align: center;
 }
 .scoreboard-table {
@@ -112,14 +148,29 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #f7faf7 0%, #f3f5f0 100%); /* softer off-white gradient */
-    min-height: 100vh;
-    background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
-    background-size: cover;
-    background-attachment: fixed;
-    background-blend-mode: lighten;
-    transition: background 0.4s;
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #f7faf7 0%, #f3f5f0 100%); /* softer off-white gradient */
+        min-height: 100vh;
+        background-image: url('https://www.top100golfcourses.com/_next/image?url=https%3A%2F%2Fcdn.sanity.io%2Fimages%2F03mhssoh%2Fproduction%2Fd382753632f1075b297a3e9d5a57c6e2227167e2-1600x1080.jpg&w=3840&q=75');
+        background-size: cover;
+        background-attachment: fixed;
+        background-blend-mode: lighten;
+        transition: background 0.4s;
+}
+
+@media (max-width: 640px) {
+    body {
+        background-attachment: scroll;
+    }
+    #appContainer {
+        padding: 0.5em !important;
+        border-radius: 0.5em;
+    }
+    .card {
+        border-radius: 0.75em;
+        box-shadow: 0 2px 8px 0 rgba(34, 139, 34, 0.10), 0 1.5px 6px 0 rgba(0,0,0,0.05);
+    }
+}
 }
 
 body.dark-mode {
