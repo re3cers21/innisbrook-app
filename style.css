@@ -540,3 +540,6 @@ body.dark-mode .scoreboard-table th.text-xs {
 body.dark-mode .scoreboard-table .font-bold {
     color: #fff !important;
 }
+body.dark-mode .hover\:bg-gray-50:hover {
+    background: #204d2a !important;
+}
