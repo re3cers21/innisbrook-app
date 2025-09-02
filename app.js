@@ -600,17 +600,17 @@ async function renderRoundDetails(roundId) {
                 if (!scores || scores.length === 0) {
                     teamHtml += `<div class="text-gray-500 italic">No team game data available for this round.</div>`;
                 } else {
-                    // Group by match_number
+                    // Group by match_number (fallback to 'A' if undefined)
                     const matches = {};
                     scores.forEach(row => {
-                        if (!matches[row.match_number]) matches[row.match_number] = [];
-                        matches[row.match_number].push(row);
+                        const matchNum = row.match_number !== undefined && row.match_number !== null ? row.match_number : 'A';
+                        if (!matches[matchNum]) matches[matchNum] = [];
+                        matches[matchNum].push(row);
                     });
 
                     Object.keys(matches).forEach(matchNum => {
                         const match = matches[matchNum];
-                        // Add your match rendering logic here (table, player names, results, etc.)
-                        teamHtml += `<div class="mb-4"><strong>Match ${matchNum}</strong></div>`;
+                        teamHtml += `<div class="mb-4"><strong>Match ${matchNum !== 'A' ? matchNum : ''}</strong></div>`;
                         // ...render match details...
                     });
                 }
