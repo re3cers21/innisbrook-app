@@ -2011,4 +2011,39 @@ async function renderPlayerCompareTab(playerId) {
     render();
 }
 
+// --- Round 5 Team Game Results ---
+async function renderRound5TeamGame() {
+    const container = document.getElementById('round5TeamGameContainer');
+    container.innerHTML = '<div class="loader"></div>';
+
+    // Fetch team net totals for round 5
+    const { data, error } = await supabase
+        .from('round5_teamgame')
+        .select('*');
+    if (error) {
+        container.innerHTML = `<div class="text-red-500 italic">Error loading Round 5 team game results: ${error.message}</div>`;
+        return;
+    }
+
+    let html = `<h3 class="text-xl font-bold mb-4">Round 5 Team Net Totals</h3>
+        <table class="min-w-full text-sm scoreboard-table mb-6">
+            <thead>
+                <tr>
+                    <th>Team</th>
+                    <th>Net Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${data.map(row => `
+                    <tr>
+                        <td class="px-4 py-2 text-center font-semibold">${row.team}</td>
+                        <td class="px-4 py-2 text-center">${row.team_net_total}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>`;
+
+    container.innerHTML = html;
+}
+
 

@@ -584,3 +584,16 @@ left join r3_team_points r3 on t.team = r3.team
 left join r4_team_points r4 on t.team = r4.team
 left join r5_team_points r5 on t.team = r5.team
 order by total_points desc;
+
+
+create view public.round5_teamgame as
+select
+  p.team,
+  sum(ds.net_strokes) as team_net_total
+from
+  detailed_scores ds
+  join "Players" p on ds.player_id = p.player_id
+where
+  ds.round_id = 5
+group by
+  p.team;
