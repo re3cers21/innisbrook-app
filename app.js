@@ -560,8 +560,13 @@ async function renderRoundDetails(roundId) {
                 container.innerHTML += netHtml;
             }
         }
-        // TEAM GAME (Hi-Lo)
+        // TEAM GAME (Hi-Lo or Round 5)
         if (window.scorecardTypeState[roundId].team) {
+            if (roundId === 5) {
+                // Render Round 5 Team Game results
+                await renderRound5TeamGame();
+                return;
+            }
             let teamHtml = `<div class="mb-8"><h4 class="text-lg font-bold mb-2">Team Game</h4>`;
             if (roundId === 1 || roundId === 2) {
                 // Use hilo_results_round1 or hilo_results_round2
@@ -1348,6 +1353,8 @@ async function renderNetLeaderboard() {
                     <td class="px-4 py-2 text-center font-bold">${toParStr(row.total_to_par)}</td>
                 </tr>`;
             });
+
+ });
 
             html += `</tbody></table>`;
             leaderboardContainer.innerHTML = html;
