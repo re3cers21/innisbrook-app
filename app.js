@@ -1627,15 +1627,15 @@ async function renderPayoutsGamesPage() {
     buyinTable += `</tbody></table>`;
 
     summaryDiv.innerHTML = `
-    <div class="mb-4">
-        ${allRoundsPlayed ? `<strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion)<br>` : ''}
-        ${winningTeamPoints >= WINNING_TEAM_MIN_POINTS ? `<strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>` : ''}
-        <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
-        <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
-    </div>
-    <h4 class="text-lg font-semibold mb-2">Player Buy-Ins</h4>
-    ${buyinTable}
-    </div>`;
+<div class="mb-4">
+    <strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion after all rounds are played)<br>
+    <strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team if the team earns 9.5+ points)<br>
+    <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
+    <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
+</div>
+<h4 class="text-lg font-semibold mb-2">Player Buy-Ins</h4>
+${buyinTable}
+</div>`;
 
     // --- Render Winners Per Round tab ---
     // Split winners by event type
