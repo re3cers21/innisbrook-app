@@ -1571,6 +1571,9 @@ async function renderPayoutsGamesPage() {
     const allRoundsPlayed = netChampion &&
     [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
 
+    // Check if at least one player has a complete net score for Round 5
+    const round5Complete = netLeaderboard && netLeaderboard.some(p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== '');
+
     // Earnings calculation
     const earnings = {};
     buyins.forEach(b => {
@@ -1591,12 +1594,12 @@ async function renderPayoutsGamesPage() {
             earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
         }
     });
-    // Only add Net Champion payout if all rounds played and netChampion is the lowest total_net
-    if (allRoundsPlayed && netChampion && earnings[netChampion.player_id]) {
+    // Only add Net Champion payout if Round 5 is complete
+    if (round5Complete && netChampion && earnings[netChampion.player_id]) {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
     }
-    // Only add Winning Team payout if team has enough points
+    // Only add Winning Team payout if the team has enough points
     if (winningTeamPoints >= WINNING_TEAM_MIN_POINTS) {
         winningTeamPlayers.forEach(p => {
             if (earnings[p.player_id]) {
@@ -1840,6 +1843,9 @@ async function renderPlayerEarningsTab(playerId) {
     // Check if all 5 rounds have been played for the net champion
     const allRoundsPlayed = netChampion &&
         [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
+
+    // Check if at least one player has a complete net score for Round 5
+    const round5Complete = netLeaderboard && netLeaderboard.some(p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== '');
 
     let details = [];
     let total = 0;
