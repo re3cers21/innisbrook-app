@@ -1545,7 +1545,7 @@ async function renderPayoutsGamesPage() {
     ] = await Promise.all([
         supabase.from('RoundGameWinnersWithName').select('*').order('round_id, event_type'),
         supabase.from('buyins_with_names').select('*'),
-        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net').order('total_net', { ascending: true }).limit(1),
+        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net, net_r5').order('total_net', { ascending: true }),
         supabase.from('team_leaderboard_detailed').select('team, total_points').order('total_points', { ascending: false }).limit(1),
         supabase.from('event_buyin_counts').select('*').single()
     ]);
@@ -1829,7 +1829,7 @@ async function renderPlayerEarningsTab(playerId) {
     const [{ data: buyins }, { data: winners }, { data: netLeaderboard }, { data: teamLeaderboard }, { data: buyinCounts }] = await Promise.all([
         supabase.from('buyins_with_names').select('*'),
         supabase.from('RoundGameWinnersWithName').select('*'),
-        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net').order('total_net', { ascending: true }).limit(1),
+        supabase.from('net_leaderboard_detailed').select('player_id, name, total_net, net_r5').order('total_net', { ascending: true }),
         supabase.from('team_leaderboard_detailed').select('team, total_points').order('total_points', { ascending: false }).limit(1),
         supabase.from('event_buyin_counts').select('*').single()
     ]);
