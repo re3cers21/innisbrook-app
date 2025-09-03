@@ -1569,7 +1569,7 @@ async function renderPayoutsGamesPage() {
 
     // Check if all 5 rounds have been played (all net_r1..net_r5 are not null for the net champion)
     const allRoundsPlayed = netChampion &&
-        [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined);
+    [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
 
     // Earnings calculation
     const earnings = {};
@@ -1591,7 +1591,7 @@ async function renderPayoutsGamesPage() {
             earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
         }
     });
-    // Only add Net Champion payout if all rounds played
+    // Only add Net Champion payout if all rounds played and netChampion is the lowest total_net
     if (allRoundsPlayed && netChampion && earnings[netChampion.player_id]) {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
@@ -1838,9 +1838,8 @@ async function renderPlayerEarningsTab(playerId) {
     const TEAM_GAME_PAYOUT = 170;
 
     // Check if all 5 rounds have been played for the net champion
-    const allRoundsPlayed = netLeaderboard &&
-        netLeaderboard.length &&
-        [1,2,3,4,5].every(r => netLeaderboard[0][`net_r${r}`] !== null && netLeaderboard[0][`net_r${r}`] !== undefined);
+    const allRoundsPlayed = netChampion &&
+        [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
 
     let details = [];
     let total = 0;
@@ -1860,7 +1859,7 @@ async function renderPlayerEarningsTab(playerId) {
     });
 
     // Net Champion
-    if (allRoundsPlayed && netLeaderboard && netLeaderboard.length && netLeaderboard[0].player_id == playerId) {
+    if (allRoundsPlayed && netChampion && netChampion.player_id == playerId) {
         details.push(`Net Champion: <span class="font-semibold text-emerald-700">$${NET_CHAMP_PAYOUT}</span>`);
         total += NET_CHAMP_PAYOUT;
     }
