@@ -1573,7 +1573,7 @@ async function renderPayoutsGamesPage() {
 
     // Check if at least one player has a complete net score for Round 5
     const round5Complete = netLeaderboard && netLeaderboard.some(
-        p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== ''
+        p => typeof p.net_r5 === 'number' && p.net_r5 > 0
     );
 
     // Earnings calculation
@@ -1848,7 +1848,7 @@ async function renderPlayerEarningsTab(playerId) {
 
     // Check if at least one player has a complete net score for Round 5
     const round5Complete = netLeaderboard && netLeaderboard.some(
-        p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== ''
+        p => typeof p.net_r5 === 'number' && p.net_r5 > 0
     );
 
     let details = [];
