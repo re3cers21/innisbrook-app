@@ -1563,6 +1563,10 @@ async function renderPayoutsGamesPage() {
     const NET_CHAMP_PAYOUT = 180;
     const TEAM_GAME_PAYOUT = 170;
 
+    // Check if all 5 rounds have been played (all net_r1..net_r5 are not null for the net champion)
+    const allRoundsPlayed = netChampion &&
+        [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined);
+
     // Earnings calculation
     const earnings = {};
     buyins.forEach(b => {
@@ -1583,7 +1587,8 @@ async function renderPayoutsGamesPage() {
             earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
         }
     });
-    if (netChampion && earnings[netChampion.player_id]) {
+    // Only add Net Champion payout if all rounds played
+    if (allRoundsPlayed && netChampion && earnings[netChampion.player_id]) {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
     }
@@ -1615,16 +1620,14 @@ async function renderPayoutsGamesPage() {
     buyinTable += `</tbody></table>`;
 
     summaryDiv.innerHTML = `
-    <div class="mb-8">
-        <h3 class="text-xl font-bold mb-4">Payout Details</h3>
-        <div class="mb-4">
-            <strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion)<br>
-            <strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>
-            <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
-            <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
-        </div>
-        <h4 class="text-lg font-semibold mb-2">Player Buy-Ins</h4>
-        ${buyinTable}
+    <div class="mb-4">
+        ${allRoundsPlayed ? `<strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion)<br>` : ''}
+        <strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>
+        <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
+        <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
+    </div>
+    <h4 class="text-lg font-semibold mb-2">Player Buy-Ins</h4>
+    ${buyinTable}
     </div>`;
 
     // --- Render Winners Per Round tab ---
@@ -1822,6 +1825,11 @@ async function renderPlayerEarningsTab(playerId) {
     const NET_CHAMP_PAYOUT = 180;
     const TEAM_GAME_PAYOUT = 170;
 
+    // Check if all 5 rounds have been played for the net champion
+    const allRoundsPlayed = netLeaderboard &&
+        netLeaderboard.length &&
+        [1,2,3,4,5].every(r => netLeaderboard[0][`net_r${r}`] !== null && netLeaderboard[0][`net_r${r}`] !== undefined);
+
     let details = [];
     let total = 0;
 
@@ -1840,7 +1848,7 @@ async function renderPlayerEarningsTab(playerId) {
     });
 
     // Net Champion
-    if (netLeaderboard && netLeaderboard.length && netLeaderboard[0].player_id == playerId) {
+    if (allRoundsPlayed && netLeaderboard && netLeaderboard.length && netLeaderboard[0].player_id == playerId) {
         details.push(`Net Champion: <span class="font-semibold text-emerald-700">$${NET_CHAMP_PAYOUT}</span>`);
         total += NET_CHAMP_PAYOUT;
     }
