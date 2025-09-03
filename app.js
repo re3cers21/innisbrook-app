@@ -1572,7 +1572,9 @@ async function renderPayoutsGamesPage() {
     [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
 
     // Check if at least one player has a complete net score for Round 5
-    const round5Complete = netLeaderboard && netLeaderboard.some(p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== '');
+    const round5Complete = netLeaderboard && netLeaderboard.some(
+        p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== ''
+    );
 
     // Earnings calculation
     const earnings = {};
@@ -1594,7 +1596,7 @@ async function renderPayoutsGamesPage() {
             earnings[w.player_id].details.push(`${w.event_type === 'ctp' ? 'CTP' : 'First Birdie'} (Round ${w.round_id}): $${amount}`);
         }
     });
-    // Only add Net Champion payout if Round 5 is complete
+    // Only add Net Champion payout if at least one player has a valid net score for Round 5
     if (round5Complete && netChampion && earnings[netChampion.player_id]) {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
@@ -1845,7 +1847,9 @@ async function renderPlayerEarningsTab(playerId) {
         [1,2,3,4,5].every(r => netChampion[`net_r${r}`] !== null && netChampion[`net_r${r}`] !== undefined && netChampion[`net_r${r}`] !== '');
 
     // Check if at least one player has a complete net score for Round 5
-    const round5Complete = netLeaderboard && netLeaderboard.some(p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== '');
+    const round5Complete = netLeaderboard && netLeaderboard.some(
+        p => p.net_r5 !== null && p.net_r5 !== undefined && p.net_r5 !== ''
+    );
 
     let details = [];
     let total = 0;
