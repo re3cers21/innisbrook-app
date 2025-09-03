@@ -1526,6 +1526,8 @@ document.getElementById('tab-leaderboard').addEventListener('click', () => {
 });
 
 // --- Payouts & Games Page ---
+const WINNING_TEAM_MIN_POINTS = 9.5;
+
 async function renderPayoutsGamesPage() {
     // Containers for each tab
     const summaryDiv = document.getElementById('payouts-summary');
@@ -1555,7 +1557,9 @@ async function renderPayoutsGamesPage() {
     }
 
     const netChampion = netLeaderboard && netLeaderboard.length > 0 ? netLeaderboard[0] : null;
-    const winningTeam = teamLeaderboard && teamLeaderboard.length > 0 ? teamLeaderboard[0].team : null;
+    const winningTeamObj = teamLeaderboard && teamLeaderboard.length > 0 ? teamLeaderboard[0] : null;
+    const winningTeam = winningTeamObj ? winningTeamObj.team : null;
+    const winningTeamPoints = winningTeamObj ? winningTeamObj.total_points : 0;
     const winningTeamPlayers = buyins.filter(b => b.team === winningTeam);
 
     const CTP_PAYOUT = buyinCounts.ctp_count * 5;
@@ -1592,12 +1596,15 @@ async function renderPayoutsGamesPage() {
         earnings[netChampion.player_id].total += NET_CHAMP_PAYOUT;
         earnings[netChampion.player_id].details.push(`Net Champion: $${NET_CHAMP_PAYOUT}`);
     }
-    winningTeamPlayers.forEach(p => {
-        if (earnings[p.player_id]) {
-            earnings[p.player_id].total += TEAM_GAME_PAYOUT;
-            earnings[p.player_id].details.push(`Winning Team (${winningTeam}): $${TEAM_GAME_PAYOUT}`);
-        }
-    });
+    // Only add Winning Team payout if team has enough points
+    if (winningTeamPoints >= WINNING_TEAM_MIN_POINTS) {
+        winningTeamPlayers.forEach(p => {
+            if (earnings[p.player_id]) {
+                earnings[p.player_id].total += TEAM_GAME_PAYOUT;
+                earnings[p.player_id].details.push(`Winning Team (${winningTeam}): $${TEAM_GAME_PAYOUT}`);
+            }
+        });
+    }
 
     // --- Render Major Payouts tab ---
     // Build the Player Buy-Ins table
@@ -1622,7 +1629,7 @@ async function renderPayoutsGamesPage() {
     summaryDiv.innerHTML = `
     <div class="mb-4">
         ${allRoundsPlayed ? `<strong>Net Champion:</strong> $${NET_CHAMP_PAYOUT} (awarded to the overall Net Champion)<br>` : ''}
-        <strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>
+        ${winningTeamPoints >= WINNING_TEAM_MIN_POINTS ? `<strong>Winning Team:</strong> $${TEAM_GAME_PAYOUT} per player (awarded to each player on the winning team)<br>` : ''}
         <strong>Closest to the Pin (CTP):</strong> $${CTP_PAYOUT} per round (awarded to the CTP winner each round)<br>
         <strong>First Birdie:</strong> $${FIRST_BIRDIE_PAYOUT} per round (awarded to the First Birdie winner each round)
     </div>
@@ -1692,10 +1699,15 @@ async function renderPayoutsGamesPage() {
     let earningsHtml = `<h3 class="text-xl font-bold mb-4">Earnings Leaderboard</h3>`;
     earningsHtml += `<table class="min-w-full text-sm scoreboard-table mb-6"><thead><tr><th>Player</th><th>Total Earnings</th><th>Details</th></tr></thead><tbody>`;
     leaderboard.forEach(e => {
+        // Only show Winning Team details if team has enough points
+        const details = e.details.filter(d => !d.startsWith('Winning Team') || winningTeamPoints >= WINNING_TEAM_MIN_POINTS);
         earningsHtml += `<tr>
             <td class="px-4 py-2">${e.name}</td>
-            <td class="px-4 py-2 text-center font-bold">$${e.total}</td>
-            <td class="px-4 py-2">${e.details.join('<br>')}</td>
+            <td class="px-4 py-2 text-center font-bold">$${details.reduce((sum, d) => {
+                const match = d.match(/\$(\d+)/);
+                return sum + (match ? Number(match[1]) : 0);
+            }, 0)}</td>
+            <td class="px-4 py-2">${details.join('<br>')}</td>
         </tr>`;
     });
     earningsHtml += `</tbody></table>`;
