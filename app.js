@@ -1,4 +1,5 @@
 // --- Function Declarations ---
+// Change
 function renderTeams(data) {
     const createPlayerCard = player => {
         const captainBadge = player.is_captain ? `<span class="ml-2 text-xs font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full">Captain</span>` : '';
